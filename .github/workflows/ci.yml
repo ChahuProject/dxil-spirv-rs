@@ -59,17 +59,21 @@ jobs:
         if: runner.os == 'macOS'
         run: brew install cmake ninja llvm
 
-      - name: Cache cargo
+      - name: Cache cargo registry & git
         uses: actions/cache@v4
         with:
           path: |
             ~/.cargo/registry
             ~/.cargo/git
-            target
-          key: ${{ runner.os }}-clippy-${{ hashFiles('**/Cargo.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-clippy-
-            ${{ runner.os }}-cargo-
+          key: ${{ runner.os }}-clippy-crates-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: ${{ runner.os }}-clippy-crates-
+
+      # NOTE: we intentionally do NOT cache `target/` here. The C++ static
+      # libraries are produced by CMake under target/debug/build/dxil-spirv-sys-*/
+      # and are not tracked by Cargo's fingerprinting, so a restored target dir
+      # can contain stale Rust .rlibs that reference C++ libraries which are
+      # absent or at a different path — producing "unable to find library
+      # -ldxbc-spirv" link errors. Building fresh is slower but correct.
 
       - name: Clippy
         run: cargo clippy --workspace --all-targets -- -D warnings
@@ -103,17 +107,19 @@ jobs:
         if: runner.os == 'macOS'
         run: brew install cmake ninja llvm
 
-      - name: Cache cargo
+      - name: Cache cargo registry & git
         uses: actions/cache@v4
         with:
           path: |
             ~/.cargo/registry
             ~/.cargo/git
-            target
-          key: ${{ runner.os }}-build-${{ hashFiles('**/Cargo.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-build-
-            ${{ runner.os }}-cargo-
+          key: ${{ runner.os }}-build-crates-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: ${{ runner.os }}-build-crates-
+
+      # We do NOT cache `target/` (see clippy job): the CMake-produced C++
+      # static libraries under target/.../dxil-spirv-sys-*/out are invisible to
+      # Cargo's fingerprinting, so a restored target/ links against missing or
+      # relocated C++ archives. Building fresh keeps the link step correct.
 
       # Build and test in one invocation's target dir so the C++ library and
       # Rust deps are compiled once. --workspace --all-targets covers lib,
