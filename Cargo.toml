@@ -1,0 +1,20 @@
+[workspace]
+resolver = "2"
+members = [
+    "dxil-spirv",
+    "dxil-spirv-sys",
+]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.70"
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/pengjiaxusz/dxil-spirv-rs"
+homepage = "https://github.com/pengjiaxusz/dxil-spirv-rs"
+keywords = ["dxil", "spirv", "d3d12", "shader", "decompile"]
+categories = ["graphics", "ffi", "parser"]
+
+[profile.release]
+lto = true
+codegen-units = 1

@@ -1,0 +1,18 @@
+[package]
+name = "dxil-spirv-sys"
+description = "Raw FFI bindings to dxil-spirv (DXIL/DXBC to SPIR-V converter)"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+keywords = ["dxil", "spirv", "ffi", "bindings"]
+categories = ["external-ffi-bindings", "graphics"]
+build = "build.rs"
+links = "dxil-spirv-c"
+publish = false
+
+[build-dependencies]
+cmake = "0.1"
+bindgen = "0.69"
