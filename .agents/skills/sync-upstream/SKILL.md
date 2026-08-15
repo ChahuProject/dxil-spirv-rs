@@ -271,6 +271,38 @@ library is missing or mis-ordered here.
   build.rs; if downstream build ergonomics become a concern, consider switching
   to the offline+committed model as a future improvement (not required now).
 
+### KB-8 · Experimental / conditional API surface
+
+Upstream `dxil_spirv_c.h` gates some functions behind preprocessor macros:
+
+| Macro | Functions | Upstream default | Our handling |
+|---|---|---|---|
+| `DXIL_SPV_ENABLE_EXPERIMENTAL_WORKGRAPHS` | `get_entry_point_node_input`, `get_entry_point_num_node_outputs`, `get_entry_point_node_output` | **Always ON** (hardcoded in `dxil_spirv_c.cpp`) | bindgen `-D` flag; safe layer always wraps |
+| `DXIL_SPV_ENABLE_EXPERIMENTAL_MULTIVIEW` | `is_multiview_compatible` | **Always ON** (hardcoded in `dxil_spirv_c.cpp`) | bindgen `-D` flag; safe layer always wraps |
+
+**Key insight**: The `.cpp` file hardcodes these `#define`s, so the compiled
+library always exports these symbols. Bindgen would skip them without
+`-D` because the header uses `#ifdef`, so we pass the defines in
+`generate_bindings()`. The safe layer wraps them unconditionally.
+
+**If upstream ever makes these conditional** (e.g. adds CMake options):
+1. Add matching `option()` in `build_with_cmake()`
+2. Add matching `#[cfg(feature = "...")]` in the safe layer
+3. Update this table and the "Switch maintenance checklist" below
+
+### KB-9 · Switch maintenance checklist
+
+When upstream adds, removes, or changes a compile-time switch, update **all**
+of these locations:
+
+1. `dxil-spirv-sys/build.rs` — `generate_bindings()` bindgen `-D` flags
+2. `dxil-spirv-sys/build.rs` — `build_with_cmake()` CMake `option()` / `target_compile_definitions()`
+3. `dxil-spirv/src/` — safe layer `#[cfg(feature = ...)]` gates
+4. `dxil-spirv/Cargo.toml` — `[features]` section
+5. `README.md` / `README.zh-CN.md` — user-facing feature documentation
+6. `dxil-spirv/tests/api_coverage.rs` — `KNOWN_MISSING` entries if functions become conditional
+7. This SKILL.md — KB-8 table and this checklist
+
 ---
 
 ## Hard rules

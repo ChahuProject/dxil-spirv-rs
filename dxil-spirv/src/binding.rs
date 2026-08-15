@@ -7,8 +7,7 @@ use std::ffi::CStr;
 
 /// The kind of a D3D shader resource (texture, buffer, sampler, …).
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub enum ResourceKind {
-    /// Invalid / unknown.
+pub enum ResourceKind {    /// Invalid / unknown.
     Invalid,
     /// 1D texture.
     Texture1D,
@@ -446,6 +445,329 @@ impl From<VulkanShaderStageIo> for sys::dxil_spv_vulkan_shader_stage_io {
             location: value.location,
             component: value.component,
             flags: flags as _,
+        }
+    }
+}
+
+/// D3D12 resource class for root signature mapping.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum ResourceClass {
+    /// Shader resource view (SRV).
+    Srv,
+    /// Unordered access view (UAV).
+    Uav,
+    /// Constant buffer view (CBV).
+    Cbv,
+    /// Sampler state.
+    Sampler,
+}
+
+impl From<ResourceClass> for sys::dxil_spv_resource_class {
+    fn from(value: ResourceClass) -> Self {
+        match value {
+            ResourceClass::Srv => sys::dxil_spv_resource_class_DXIL_SPV_RESOURCE_CLASS_SRV,
+            ResourceClass::Uav => sys::dxil_spv_resource_class_DXIL_SPV_RESOURCE_CLASS_UAV,
+            ResourceClass::Cbv => sys::dxil_spv_resource_class_DXIL_SPV_RESOURCE_CLASS_CBV,
+            ResourceClass::Sampler => {
+                sys::dxil_spv_resource_class_DXIL_SPV_RESOURCE_CLASS_SAMPLER
+            }
+        }
+    }
+}
+
+/// Meta descriptor identifier for advanced Vulkan features.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum MetaDescriptor {
+    /// Size of the resource descriptor heap.
+    ResourceDescriptorHeapSize,
+    /// Raw view into the descriptor heap.
+    RawDescriptorHeapView,
+    /// Dynamic view instancing offsets.
+    DynamicViewInstancingOffsets,
+    /// Dynamic view instancing mask.
+    DynamicViewInstancingMask,
+}
+
+impl From<MetaDescriptor> for sys::dxil_spv_meta_descriptor {
+    fn from(value: MetaDescriptor) -> Self {
+        match value {
+            MetaDescriptor::ResourceDescriptorHeapSize => {
+                sys::dxil_spv_meta_descriptor_DXIL_SPV_META_DESCRIPTOR_RESOURCE_DESCRIPTOR_HEAP_SIZE
+            }
+            MetaDescriptor::RawDescriptorHeapView => {
+                sys::dxil_spv_meta_descriptor_DXIL_SPV_META_DESCRIPTOR_RAW_DESCRIPTOR_HEAP_VIEW
+            }
+            MetaDescriptor::DynamicViewInstancingOffsets => {
+                sys::dxil_spv_meta_descriptor_DXIL_SPV_META_DESCRIPTOR_DYNAMIC_VIEW_INSTANCING_OFFSETS
+            }
+            MetaDescriptor::DynamicViewInstancingMask => {
+                sys::dxil_spv_meta_descriptor_DXIL_SPV_META_DESCRIPTOR_DYNAMIC_VIEW_INSTANCING_MASK
+            }
+        }
+    }
+}
+
+/// How a meta descriptor is exposed to Vulkan.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum MetaDescriptorKind {
+    /// Invalid / unused.
+    Invalid,
+    /// As a push constant.
+    PushConstant,
+    /// As a push constant buffer device address.
+    PushBda,
+    /// As a UBO containing a constant.
+    UboContainingConstant,
+    /// As a UBO containing a buffer device address.
+    UboContainingBda,
+    /// As a read-only SSBO.
+    ReadonlySsbo,
+}
+
+impl From<MetaDescriptorKind> for sys::dxil_spv_meta_descriptor_kind {
+    fn from(value: MetaDescriptorKind) -> Self {
+        match value {
+            MetaDescriptorKind::Invalid => {
+                sys::dxil_spv_meta_descriptor_kind_DXIL_SPV_META_DESCRIPTOR_KIND_INVALID
+            }
+            MetaDescriptorKind::PushConstant => {
+                sys::dxil_spv_meta_descriptor_kind_DXIL_SPV_META_DESCRIPTOR_KIND_PUSH_CONSTANT
+            }
+            MetaDescriptorKind::PushBda => {
+                sys::dxil_spv_meta_descriptor_kind_DXIL_SPV_META_DESCRIPTOR_KIND_PUSH_BDA
+            }
+            MetaDescriptorKind::UboContainingConstant => {
+                sys::dxil_spv_meta_descriptor_kind_DXIL_SPV_META_DESCRIPTOR_KIND_UBO_CONTAINING_CONSTANT
+            }
+            MetaDescriptorKind::UboContainingBda => {
+                sys::dxil_spv_meta_descriptor_kind_DXIL_SPV_META_DESCRIPTOR_KIND_UBO_CONTAINING_BDA
+            }
+            MetaDescriptorKind::ReadonlySsbo => {
+                sys::dxil_spv_meta_descriptor_kind_DXIL_SPV_META_DESCRIPTOR_KIND_READONLY_SSBO
+            }
+        }
+    }
+}
+
+/// RDAT (Runtime Data) subobject kind for DXR state objects.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum RdatSubobjectKind {
+    /// State object configuration.
+    StateObjectConfig,
+    /// Global root signature.
+    GlobalRootSignature,
+    /// Local root signature.
+    LocalRootSignature,
+    /// Subobject to exports association.
+    SubobjectToExportsAssociation,
+    /// Raytracing shader configuration.
+    RaytracingShaderConfig,
+    /// Raytracing pipeline configuration.
+    RaytracingPipelineConfig,
+    /// Hit group.
+    HitGroup,
+    /// Raytracing pipeline configuration (DXIL 1.1).
+    RaytracingPipelineConfig1,
+    /// Unknown / invalid.
+    Unknown,
+}
+
+impl From<sys::dxil_spv_rdat_subobject_kind> for RdatSubobjectKind {
+    fn from(value: sys::dxil_spv_rdat_subobject_kind) -> Self {
+        match value {
+            sys::dxil_spv_rdat_subobject_kind_DXIL_SPV_RDAT_SUBOBJECT_KIND_STATE_OBJECT_CONFIG => {
+                Self::StateObjectConfig
+            }
+            sys::dxil_spv_rdat_subobject_kind_DXIL_SPV_RDAT_SUBOBJECT_KIND_GLOBAL_ROOT_SIGNATURE => {
+                Self::GlobalRootSignature
+            }
+            sys::dxil_spv_rdat_subobject_kind_DXIL_SPV_RDAT_SUBOBJECT_KIND_LOCAL_ROOT_SIGNATURE => {
+                Self::LocalRootSignature
+            }
+            sys::dxil_spv_rdat_subobject_kind_DXIL_SPV_RDAT_SUBOBJECT_KIND_SUBOBJECT_TO_EXPORTS_ASSOCIATION => {
+                Self::SubobjectToExportsAssociation
+            }
+            sys::dxil_spv_rdat_subobject_kind_DXIL_SPV_RDAT_SUBOBJECT_KIND_RAYTRACING_SHADER_CONFIG => {
+                Self::RaytracingShaderConfig
+            }
+            sys::dxil_spv_rdat_subobject_kind_DXIL_SPV_RDAT_SUBOBJECT_KIND_RAYTRACING_PIPELINE_CONFIG => {
+                Self::RaytracingPipelineConfig
+            }
+            sys::dxil_spv_rdat_subobject_kind_DXIL_SPV_RDAT_SUBOBJECT_KIND_HIT_GROUP => {
+                Self::HitGroup
+            }
+            sys::dxil_spv_rdat_subobject_kind_DXIL_SPV_RDAT_SUBOBJECT_KIND_RAYTRACING_PIPELINE_CONFIG1 => {
+                Self::RaytracingPipelineConfig1
+            }
+            _ => Self::Unknown,
+        }
+    }
+}
+
+/// An RDAT subobject extracted from a parsed blob.
+///
+/// RDAT (Runtime Data) subobjects are used in DXR (DirectX Raytracing)
+/// state objects to describe pipeline configuration, root signatures,
+/// hit groups, and associations.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct RdatSubobject {
+    /// The subobject kind.
+    pub kind: RdatSubobjectKind,
+    /// The subobject name (e.g. hit group name, export name).
+    pub name: String,
+    /// Hit group type (only valid for `HitGroup` kind).
+    pub hit_group_type: u32,
+    /// Export names referenced by this subobject.
+    pub exports: Vec<String>,
+    /// Raw payload data.
+    pub payload: Vec<u8>,
+}
+
+/// Log level for the dxil-spirv thread log callback.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum LogLevel {
+    /// Debug message.
+    Debug,
+    /// Warning message.
+    Warn,
+    /// Error message.
+    Error,
+}
+
+impl From<sys::dxil_spv_log_level> for LogLevel {
+    fn from(value: sys::dxil_spv_log_level) -> Self {
+        match value {
+            sys::dxil_spv_log_level_DXIL_SPV_LOG_LEVEL_DEBUG => Self::Debug,
+            sys::dxil_spv_log_level_DXIL_SPV_LOG_LEVEL_WARN => Self::Warn,
+            sys::dxil_spv_log_level_DXIL_SPV_LOG_LEVEL_ERROR => Self::Error,
+            _ => Self::Debug,
+        }
+    }
+}
+
+/// Work Graphs node input data (SM6.8+).
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct NodeInputData {
+    /// Node ID (often same as entry point name).
+    pub node_id: String,
+    /// Payload stride; 0 means EmptyNode.
+    pub payload_stride: u32,
+    /// Launch type.
+    pub launch_type: u32,
+    /// Node array index.
+    pub node_array_index: u32,
+    /// Dispatch grid offset.
+    pub dispatch_grid_offset: u32,
+    /// Dispatch grid type bits.
+    pub dispatch_grid_type_bits: u32,
+    /// Dispatch grid components.
+    pub dispatch_grid_components: u32,
+    /// Broadcast grid dimensions.
+    pub broadcast_grid: [u32; 3],
+    /// Thread group size spec IDs.
+    pub thread_group_size_spec_id: [u32; 3],
+    /// Max broadcast grid spec IDs.
+    pub max_broadcast_grid_spec_id: [u32; 3],
+    /// Recursion factor.
+    pub recursion_factor: u32,
+    /// Coalesce factor.
+    pub coalesce_factor: u32,
+    /// Node share input ID.
+    pub node_share_input_id: String,
+    /// Node share input array index.
+    pub node_share_input_array_index: u32,
+    /// Local root arguments table index.
+    pub local_root_arguments_table_index: u32,
+    /// Is indirect BDA stride program entry spec ID.
+    pub is_indirect_bda_stride_program_entry_spec_id: u32,
+    /// Is entry point spec ID.
+    pub is_entry_point_spec_id: u32,
+    /// Dispatch grid is upper bound spec ID.
+    pub dispatch_grid_is_upper_bound_spec_id: u32,
+    /// Is static broadcast node spec ID.
+    pub is_static_broadcast_node_spec_id: u32,
+    /// Dispatch grid is upper bound.
+    pub dispatch_grid_is_upper_bound: bool,
+    /// Node track RW input sharing.
+    pub node_track_rw_input_sharing: bool,
+    /// Is program entry.
+    pub is_program_entry: bool,
+}
+
+impl From<sys::dxil_spv_node_input_data> for NodeInputData {
+    fn from(raw: sys::dxil_spv_node_input_data) -> Self {
+        Self {
+            node_id: if raw.node_id.is_null() {
+                String::new()
+            } else {
+                unsafe { std::ffi::CStr::from_ptr(raw.node_id) }
+                    .to_string_lossy()
+                    .into_owned()
+            },
+            payload_stride: raw.payload_stride,
+            launch_type: raw.launch_type as u32,
+            node_array_index: raw.node_array_index,
+            dispatch_grid_offset: raw.dispatch_grid_offset,
+            dispatch_grid_type_bits: raw.dispatch_grid_type_bits,
+            dispatch_grid_components: raw.dispatch_grid_components,
+            broadcast_grid: raw.broadcast_grid,
+            thread_group_size_spec_id: raw.thread_group_size_spec_id,
+            max_broadcast_grid_spec_id: raw.max_broadcast_grid_spec_id,
+            recursion_factor: raw.recursion_factor,
+            coalesce_factor: raw.coalesce_factor,
+            node_share_input_id: if raw.node_share_input_id.is_null() {
+                String::new()
+            } else {
+                unsafe { std::ffi::CStr::from_ptr(raw.node_share_input_id) }
+                    .to_string_lossy()
+                    .into_owned()
+            },
+            node_share_input_array_index: raw.node_share_input_array_index,
+            local_root_arguments_table_index: raw.local_root_arguments_table_index,
+            is_indirect_bda_stride_program_entry_spec_id: raw
+                .is_indirect_bda_stride_program_entry_spec_id,
+            is_entry_point_spec_id: raw.is_entry_point_spec_id,
+            dispatch_grid_is_upper_bound_spec_id: raw.dispatch_grid_is_upper_bound_spec_id,
+            is_static_broadcast_node_spec_id: raw.is_static_broadcast_node_spec_id,
+            dispatch_grid_is_upper_bound: raw.dispatch_grid_is_upper_bound != 0,
+            node_track_rw_input_sharing: raw.node_track_rw_input_sharing != 0,
+            is_program_entry: raw.is_program_entry != 0,
+        }
+    }
+}
+
+/// Work Graphs node output data (SM6.8+).
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct NodeOutputData {
+    /// Node ID.
+    pub node_id: String,
+    /// Node array index.
+    pub node_array_index: u32,
+    /// Node array size (`u32::MAX` = unbounded).
+    pub node_array_size: u32,
+    /// Node index spec constant ID.
+    pub node_index_spec_constant_id: u32,
+    /// Max records.
+    pub max_records: u32,
+    /// Sparse array flag.
+    pub sparse_array: bool,
+}
+
+impl From<sys::dxil_spv_node_output_data> for NodeOutputData {
+    fn from(raw: sys::dxil_spv_node_output_data) -> Self {
+        Self {
+            node_id: if raw.node_id.is_null() {
+                String::new()
+            } else {
+                unsafe { std::ffi::CStr::from_ptr(raw.node_id) }
+                    .to_string_lossy()
+                    .into_owned()
+            },
+            node_array_index: raw.node_array_index,
+            node_array_size: raw.node_array_size,
+            node_index_spec_constant_id: raw.node_index_spec_constant_id,
+            max_records: raw.max_records,
+            sparse_array: raw.sparse_array != 0,
         }
     }
 }

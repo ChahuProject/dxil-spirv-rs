@@ -127,7 +127,7 @@ fn generate_bindings(upstream: &Path, manifest_dir: &Path) {
     let header = upstream.join("dxil_spirv_c.h");
     let out_path = PathBuf::from(env::var("OUT_DIR").unwrap());
 
-    let bindings = bindgen::Builder::default()
+    let mut builder = bindgen::Builder::default()
         .header(header.display().to_string())
         .clang_arg(format!("-I{}", upstream.display()))
         .parse_callbacks(Box::new(bindgen::CargoCallbacks::new()))
@@ -135,7 +135,22 @@ fn generate_bindings(upstream: &Path, manifest_dir: &Path) {
         .allowlist_type("dxil_spv_.*")
         .allowlist_var("DXIL_SPV_.*")
         .derive_debug(true)
-        .derive_default(true)
+        .derive_default(true);
+
+    // The upstream dxil_spirv_c.h gates some API surface behind
+    // preprocessor macros. The corresponding features are always compiled
+    // into the C++ library (upstream dxil_spirv_c.cpp hardcodes the
+    // #defines), but bindgen cannot see them unless we pass the same
+    // defines here. Keep this list in sync with dxil_spirv_c.cpp.
+    //
+    // NOTE: If upstream ever makes these conditional in the .cpp as well,
+    // we must also add matching CMake compile definitions in
+    // build_with_cmake() and gate the safe layer with cargo features.
+    builder = builder
+        .clang_arg("-DDXIL_SPV_ENABLE_EXPERIMENTAL_WORKGRAPHS")
+        .clang_arg("-DDXIL_SPV_ENABLE_EXPERIMENTAL_MULTIVIEW");
+
+    let bindings = builder
         .generate()
         .expect("bindgen failed on dxil_spirv_c.h");
 

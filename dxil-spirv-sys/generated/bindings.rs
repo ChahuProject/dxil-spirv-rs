@@ -340,6 +340,16 @@ pub const dxil_spv_meta_descriptor_kind_DXIL_SPV_META_DESCRIPTOR_KIND_READONLY_S
 pub const dxil_spv_meta_descriptor_kind_DXIL_SPV_META_DESCRIPTOR_KIND_INT_MAX:
     dxil_spv_meta_descriptor_kind = 2147483647;
 pub type dxil_spv_meta_descriptor_kind = ::std::os::raw::c_int;
+pub const dxil_spv_node_launch_type_DXIL_SPV_NODE_LAUNCH_TYPE_INVALID: dxil_spv_node_launch_type =
+    0;
+pub const dxil_spv_node_launch_type_DXIL_SPV_NODE_LAUNCH_TYPE_BROADCASTING:
+    dxil_spv_node_launch_type = 1;
+pub const dxil_spv_node_launch_type_DXIL_SPV_NODE_LAUNCH_TYPE_COALESCING:
+    dxil_spv_node_launch_type = 2;
+pub const dxil_spv_node_launch_type_DXIL_SPV_NODE_LAUNCH_TYPE_THREAD: dxil_spv_node_launch_type = 3;
+pub const dxil_spv_node_launch_type_DXIL_SPV_NODE_LAUNCH_TYPE_INT_MAX: dxil_spv_node_launch_type =
+    2147483647;
+pub type dxil_spv_node_launch_type = ::std::os::raw::c_int;
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
 pub struct dxil_spv_d3d_binding {
@@ -695,6 +705,140 @@ const _: () = {
         [::std::mem::offset_of!(dxil_spv_rdat_subobject, payload_size) - 56usize];
 };
 impl Default for dxil_spv_rdat_subobject {
+    fn default() -> Self {
+        let mut s = ::std::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::std::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct dxil_spv_node_input_data {
+    pub node_id: *const ::std::os::raw::c_char,
+    pub payload_stride: ::std::os::raw::c_uint,
+    pub launch_type: dxil_spv_node_launch_type,
+    pub node_array_index: ::std::os::raw::c_uint,
+    pub dispatch_grid_offset: ::std::os::raw::c_uint,
+    pub dispatch_grid_type_bits: ::std::os::raw::c_uint,
+    pub dispatch_grid_components: ::std::os::raw::c_uint,
+    pub broadcast_grid: [::std::os::raw::c_uint; 3usize],
+    pub thread_group_size_spec_id: [::std::os::raw::c_uint; 3usize],
+    pub max_broadcast_grid_spec_id: [::std::os::raw::c_uint; 3usize],
+    pub recursion_factor: ::std::os::raw::c_uint,
+    pub coalesce_factor: ::std::os::raw::c_uint,
+    pub node_share_input_id: *const ::std::os::raw::c_char,
+    pub node_share_input_array_index: ::std::os::raw::c_uint,
+    pub local_root_arguments_table_index: ::std::os::raw::c_uint,
+    pub is_indirect_bda_stride_program_entry_spec_id: ::std::os::raw::c_uint,
+    pub is_entry_point_spec_id: ::std::os::raw::c_uint,
+    pub dispatch_grid_is_upper_bound_spec_id: ::std::os::raw::c_uint,
+    pub is_static_broadcast_node_spec_id: ::std::os::raw::c_uint,
+    pub dispatch_grid_is_upper_bound: dxil_spv_bool,
+    pub node_track_rw_input_sharing: dxil_spv_bool,
+    pub is_program_entry: dxil_spv_bool,
+}
+#[allow(clippy::unnecessary_operation, clippy::identity_op)]
+const _: () = {
+    ["Size of dxil_spv_node_input_data"]
+        [::std::mem::size_of::<dxil_spv_node_input_data>() - 120usize];
+    ["Alignment of dxil_spv_node_input_data"]
+        [::std::mem::align_of::<dxil_spv_node_input_data>() - 8usize];
+    ["Offset of field: dxil_spv_node_input_data::node_id"]
+        [::std::mem::offset_of!(dxil_spv_node_input_data, node_id) - 0usize];
+    ["Offset of field: dxil_spv_node_input_data::payload_stride"]
+        [::std::mem::offset_of!(dxil_spv_node_input_data, payload_stride) - 8usize];
+    ["Offset of field: dxil_spv_node_input_data::launch_type"]
+        [::std::mem::offset_of!(dxil_spv_node_input_data, launch_type) - 12usize];
+    ["Offset of field: dxil_spv_node_input_data::node_array_index"]
+        [::std::mem::offset_of!(dxil_spv_node_input_data, node_array_index) - 16usize];
+    ["Offset of field: dxil_spv_node_input_data::dispatch_grid_offset"]
+        [::std::mem::offset_of!(dxil_spv_node_input_data, dispatch_grid_offset) - 20usize];
+    ["Offset of field: dxil_spv_node_input_data::dispatch_grid_type_bits"]
+        [::std::mem::offset_of!(dxil_spv_node_input_data, dispatch_grid_type_bits) - 24usize];
+    ["Offset of field: dxil_spv_node_input_data::dispatch_grid_components"]
+        [::std::mem::offset_of!(dxil_spv_node_input_data, dispatch_grid_components) - 28usize];
+    ["Offset of field: dxil_spv_node_input_data::broadcast_grid"]
+        [::std::mem::offset_of!(dxil_spv_node_input_data, broadcast_grid) - 32usize];
+    ["Offset of field: dxil_spv_node_input_data::thread_group_size_spec_id"]
+        [::std::mem::offset_of!(dxil_spv_node_input_data, thread_group_size_spec_id) - 44usize];
+    ["Offset of field: dxil_spv_node_input_data::max_broadcast_grid_spec_id"]
+        [::std::mem::offset_of!(dxil_spv_node_input_data, max_broadcast_grid_spec_id) - 56usize];
+    ["Offset of field: dxil_spv_node_input_data::recursion_factor"]
+        [::std::mem::offset_of!(dxil_spv_node_input_data, recursion_factor) - 68usize];
+    ["Offset of field: dxil_spv_node_input_data::coalesce_factor"]
+        [::std::mem::offset_of!(dxil_spv_node_input_data, coalesce_factor) - 72usize];
+    ["Offset of field: dxil_spv_node_input_data::node_share_input_id"]
+        [::std::mem::offset_of!(dxil_spv_node_input_data, node_share_input_id) - 80usize];
+    ["Offset of field: dxil_spv_node_input_data::node_share_input_array_index"]
+        [::std::mem::offset_of!(dxil_spv_node_input_data, node_share_input_array_index) - 88usize];
+    ["Offset of field: dxil_spv_node_input_data::local_root_arguments_table_index"][::std::mem::offset_of!(
+        dxil_spv_node_input_data,
+        local_root_arguments_table_index
+    ) - 92usize];
+    ["Offset of field: dxil_spv_node_input_data::is_indirect_bda_stride_program_entry_spec_id"][::std::mem::offset_of!(
+        dxil_spv_node_input_data,
+        is_indirect_bda_stride_program_entry_spec_id
+    )
+        - 96usize];
+    ["Offset of field: dxil_spv_node_input_data::is_entry_point_spec_id"]
+        [::std::mem::offset_of!(dxil_spv_node_input_data, is_entry_point_spec_id) - 100usize];
+    ["Offset of field: dxil_spv_node_input_data::dispatch_grid_is_upper_bound_spec_id"][::std::mem::offset_of!(
+        dxil_spv_node_input_data,
+        dispatch_grid_is_upper_bound_spec_id
+    )
+        - 104usize];
+    ["Offset of field: dxil_spv_node_input_data::is_static_broadcast_node_spec_id"][::std::mem::offset_of!(
+        dxil_spv_node_input_data,
+        is_static_broadcast_node_spec_id
+    ) - 108usize];
+    ["Offset of field: dxil_spv_node_input_data::dispatch_grid_is_upper_bound"]
+        [::std::mem::offset_of!(dxil_spv_node_input_data, dispatch_grid_is_upper_bound) - 112usize];
+    ["Offset of field: dxil_spv_node_input_data::node_track_rw_input_sharing"]
+        [::std::mem::offset_of!(dxil_spv_node_input_data, node_track_rw_input_sharing) - 113usize];
+    ["Offset of field: dxil_spv_node_input_data::is_program_entry"]
+        [::std::mem::offset_of!(dxil_spv_node_input_data, is_program_entry) - 114usize];
+};
+impl Default for dxil_spv_node_input_data {
+    fn default() -> Self {
+        let mut s = ::std::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::std::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct dxil_spv_node_output_data {
+    pub node_id: *const ::std::os::raw::c_char,
+    pub node_array_index: ::std::os::raw::c_uint,
+    pub node_array_size: ::std::os::raw::c_uint,
+    pub node_index_spec_constant_id: ::std::os::raw::c_uint,
+    pub max_records: ::std::os::raw::c_uint,
+    pub sparse_array: dxil_spv_bool,
+}
+#[allow(clippy::unnecessary_operation, clippy::identity_op)]
+const _: () = {
+    ["Size of dxil_spv_node_output_data"]
+        [::std::mem::size_of::<dxil_spv_node_output_data>() - 32usize];
+    ["Alignment of dxil_spv_node_output_data"]
+        [::std::mem::align_of::<dxil_spv_node_output_data>() - 8usize];
+    ["Offset of field: dxil_spv_node_output_data::node_id"]
+        [::std::mem::offset_of!(dxil_spv_node_output_data, node_id) - 0usize];
+    ["Offset of field: dxil_spv_node_output_data::node_array_index"]
+        [::std::mem::offset_of!(dxil_spv_node_output_data, node_array_index) - 8usize];
+    ["Offset of field: dxil_spv_node_output_data::node_array_size"]
+        [::std::mem::offset_of!(dxil_spv_node_output_data, node_array_size) - 12usize];
+    ["Offset of field: dxil_spv_node_output_data::node_index_spec_constant_id"]
+        [::std::mem::offset_of!(dxil_spv_node_output_data, node_index_spec_constant_id) - 16usize];
+    ["Offset of field: dxil_spv_node_output_data::max_records"]
+        [::std::mem::offset_of!(dxil_spv_node_output_data, max_records) - 20usize];
+    ["Offset of field: dxil_spv_node_output_data::sparse_array"]
+        [::std::mem::offset_of!(dxil_spv_node_output_data, sparse_array) - 24usize];
+};
+impl Default for dxil_spv_node_output_data {
     fn default() -> Self {
         let mut s = ::std::mem::MaybeUninit::<Self>::uninit();
         unsafe {
@@ -2247,6 +2391,49 @@ impl Default for dxil_spv_option_extended_non_semantic {
 }
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
+pub struct dxil_spv_option_view_instancing {
+    pub base: dxil_spv_option_base,
+    pub enabled: dxil_spv_bool,
+    pub last_pre_rasterization_stage: dxil_spv_bool,
+    pub view_index_to_view_instance_spec_id: ::std::os::raw::c_uint,
+    pub view_instance_to_viewport_spec_id: ::std::os::raw::c_uint,
+}
+#[allow(clippy::unnecessary_operation, clippy::identity_op)]
+const _: () = {
+    ["Size of dxil_spv_option_view_instancing"]
+        [::std::mem::size_of::<dxil_spv_option_view_instancing>() - 16usize];
+    ["Alignment of dxil_spv_option_view_instancing"]
+        [::std::mem::align_of::<dxil_spv_option_view_instancing>() - 4usize];
+    ["Offset of field: dxil_spv_option_view_instancing::base"]
+        [::std::mem::offset_of!(dxil_spv_option_view_instancing, base) - 0usize];
+    ["Offset of field: dxil_spv_option_view_instancing::enabled"]
+        [::std::mem::offset_of!(dxil_spv_option_view_instancing, enabled) - 4usize];
+    ["Offset of field: dxil_spv_option_view_instancing::last_pre_rasterization_stage"][::std::mem::offset_of!(
+        dxil_spv_option_view_instancing,
+        last_pre_rasterization_stage
+    ) - 5usize];
+    ["Offset of field: dxil_spv_option_view_instancing::view_index_to_view_instance_spec_id"][::std::mem::offset_of!(
+        dxil_spv_option_view_instancing,
+        view_index_to_view_instance_spec_id
+    )
+        - 8usize];
+    ["Offset of field: dxil_spv_option_view_instancing::view_instance_to_viewport_spec_id"][::std::mem::offset_of!(
+        dxil_spv_option_view_instancing,
+        view_instance_to_viewport_spec_id
+    )
+        - 12usize];
+};
+impl Default for dxil_spv_option_view_instancing {
+    fn default() -> Self {
+        let mut s = ::std::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::std::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
 pub struct dxil_spv_option_mixed_float_dot_product {
     pub base: dxil_spv_option_base,
     pub fp16_fp16_fp32: dxil_spv_bool,
@@ -2451,6 +2638,28 @@ unsafe extern "C" {
         blob: dxil_spv_parsed_blob,
         index: ::std::os::raw::c_uint,
         demangled_entry: *mut *const ::std::os::raw::c_char,
+    ) -> dxil_spv_result;
+}
+unsafe extern "C" {
+    pub fn dxil_spv_parsed_blob_get_entry_point_node_input(
+        blob: dxil_spv_parsed_blob,
+        index: ::std::os::raw::c_uint,
+        data: *mut dxil_spv_node_input_data,
+    ) -> dxil_spv_result;
+}
+unsafe extern "C" {
+    pub fn dxil_spv_parsed_blob_get_entry_point_num_node_outputs(
+        blob: dxil_spv_parsed_blob,
+        index: ::std::os::raw::c_uint,
+        num_outputs: *mut ::std::os::raw::c_uint,
+    ) -> dxil_spv_result;
+}
+unsafe extern "C" {
+    pub fn dxil_spv_parsed_blob_get_entry_point_node_output(
+        blob: dxil_spv_parsed_blob,
+        index: ::std::os::raw::c_uint,
+        output_index: ::std::os::raw::c_uint,
+        data: *mut dxil_spv_node_output_data,
     ) -> dxil_spv_result;
 }
 unsafe extern "C" {
@@ -2723,6 +2932,12 @@ unsafe extern "C" {
         converter: dxil_spv_converter,
         feature: dxil_spv_shader_feature,
     ) -> dxil_spv_bool;
+}
+unsafe extern "C" {
+    pub fn dxil_spv_converter_is_multiview_compatible(
+        converter: dxil_spv_converter,
+        result: *mut dxil_spv_bool,
+    ) -> dxil_spv_result;
 }
 unsafe extern "C" {
     pub fn dxil_spv_converter_get_analysis_warnings(

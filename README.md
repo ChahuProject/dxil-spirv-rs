@@ -91,6 +91,24 @@ let spirv_words = converter.compiled_spirv()?;
 | `dxil-spirv` | `dxil-spirv/` | Safe, idiomatic wrapper — what you depend on |
 | `dxil-spirv-sys` | `dxil-spirv-sys/` | Raw bindgen FFI + CMake build (linked transitively) |
 
+### API coverage
+
+The safe wrapper exposes **all** functions from the upstream C API
+(`dxil_spv_*`). This includes:
+
+- Core conversion (`parse` → `convert` → `compiled_spirv`)
+- All 8 remapper callbacks (SRV, UAV, CBV, sampler, vertex input, stage I/O, stream output)
+- Root signature / descriptor mapping (local root constants, descriptor tables, parameter mapping)
+- Work Graphs / mesh node introspection (SM6.8)
+- Resource scanning (pre-conversion introspection)
+- RDAT subobjects (DXR state objects)
+- Thread log callback and allocator context management
+
+A compile-time test (`tests/api_coverage.rs`) ensures no upstream function
+is accidentally left unwrapped. If upstream adds new functions, the test
+fails until they are wrapped or explicitly documented as intentionally
+skipped.
+
 ## License
 
 Licensed under either of

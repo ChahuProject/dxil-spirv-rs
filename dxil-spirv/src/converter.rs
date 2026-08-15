@@ -387,6 +387,188 @@ impl Converter {
         holder.stream_output = Some(remapper);
         unsafe { sys::dxil_spv_converter_set_stream_output_remapper(self.handle, cb, userdata) };
     }
+
+    // ── Root signature / descriptor mapping ─────────────────────────────
+
+    /// Set the number of 32-bit words used for root constants.
+    ///
+    /// This must match the root signature of the shader being converted.
+    /// Call before [`Converter::run`].
+    pub fn set_root_constant_word_count(&mut self, count: u32) {
+        unsafe { sys::dxil_spv_converter_set_root_constant_word_count(self.handle, count) };
+    }
+
+    /// Set the number of root descriptors.
+    ///
+    /// This must match the root signature of the shader being converted.
+    /// Call before [`Converter::run`].
+    pub fn set_root_descriptor_count(&mut self, count: u32) {
+        unsafe { sys::dxil_spv_converter_set_root_descriptor_count(self.handle, count) };
+    }
+
+    /// Add a local root constant mapping.
+    ///
+    /// `register_space` and `register_index` identify the D3D12 register;
+    /// `num_words` is the size in 32-bit words.
+    pub fn add_local_root_constants(
+        &mut self,
+        register_space: u32,
+        register_index: u32,
+        num_words: u32,
+    ) {
+        unsafe {
+            sys::dxil_spv_converter_add_local_root_constants(
+                self.handle,
+                register_space,
+                register_index,
+                num_words,
+            )
+        };
+    }
+
+    /// Add a local root descriptor mapping.
+    ///
+    /// `resource_class` identifies the descriptor type (SRV/UAV/CBV/Sampler);
+    /// `register_space` and `register_index` identify the D3D12 register.
+    pub fn add_local_root_descriptor(
+        &mut self,
+        resource_class: crate::binding::ResourceClass,
+        register_space: u32,
+        register_index: u32,
+    ) {
+        unsafe {
+            sys::dxil_spv_converter_add_local_root_descriptor(
+                self.handle,
+                resource_class.into(),
+                register_space,
+                register_index,
+            )
+        };
+    }
+
+    /// Add a local root descriptor table entry.
+    ///
+    /// For multiple table entries per local root parameter, call
+    /// [`Converter::begin_local_root_descriptor_table`], then
+    /// `add_local_root_descriptor_table` for each entry, then
+    /// [`Converter::end_local_root_descriptor_table`].
+    pub fn add_local_root_descriptor_table(
+        &mut self,
+        resource_class: crate::binding::ResourceClass,
+        register_space: u32,
+        register_index: u32,
+        num_descriptors_in_range: u32,
+        offset_in_heap: u32,
+    ) {
+        unsafe {
+            sys::dxil_spv_converter_add_local_root_descriptor_table(
+                self.handle,
+                resource_class.into(),
+                register_space,
+                register_index,
+                num_descriptors_in_range,
+                offset_in_heap,
+            )
+        };
+    }
+
+    /// Begin a local root descriptor table scope.
+    ///
+    /// Must be paired with [`Converter::end_local_root_descriptor_table`].
+    pub fn begin_local_root_descriptor_table(&mut self) -> Result<()> {
+        let result =
+            unsafe { sys::dxil_spv_converter_begin_local_root_descriptor_table(self.handle) };
+        check(result)
+    }
+
+    /// End a local root descriptor table scope.
+    pub fn end_local_root_descriptor_table(&mut self) -> Result<()> {
+        let result =
+            unsafe { sys::dxil_spv_converter_end_local_root_descriptor_table(self.handle) };
+        check(result)
+    }
+
+    /// Map a D3D12 root parameter index to a Vulkan descriptor offset.
+    pub fn add_root_parameter_mapping(&mut self, root_parameter_index: u32, offset: u32) {
+        unsafe {
+            sys::dxil_spv_converter_add_root_parameter_mapping(
+                self.handle,
+                root_parameter_index,
+                offset,
+            )
+        };
+    }
+
+    /// Map a D3D12 root parameter index to a Vulkan descriptor set/binding.
+    pub fn add_root_descriptor_mapping(
+        &mut self,
+        root_parameter_index: u32,
+        desc_set: u32,
+        binding: u32,
+    ) {
+        unsafe {
+            sys::dxil_spv_converter_add_root_descriptor_mapping(
+                self.handle,
+                root_parameter_index,
+                desc_set,
+                binding,
+            )
+        };
+    }
+
+    // ── Debug / metadata ────────────────────────────────────────────────
+
+    /// Add non-semantic debug information to the compiled SPIR-V.
+    ///
+    /// The `tag` and `data` are copied by the implementation; the caller
+    /// may free them after this call returns.
+    pub fn add_non_semantic_debug_info(&mut self, tag: &str, data: &[u8]) -> Result<()> {
+        let c_tag = CString::new(tag).map_err(|_| Error::InvalidString)?;
+        unsafe {
+            sys::dxil_spv_converter_add_non_semantic_debug_info(
+                self.handle,
+                c_tag.as_ptr(),
+                data.as_ptr().cast(),
+                data.len(),
+            )
+        };
+        Ok(())
+    }
+
+    /// Set a meta descriptor.
+    ///
+    /// Meta descriptors are used for advanced features like descriptor
+    /// indexing and dynamic view instancing.
+    pub fn set_meta_descriptor(
+        &mut self,
+        meta: crate::binding::MetaDescriptor,
+        kind: crate::binding::MetaDescriptorKind,
+        desc_set: u32,
+        binding_or_push_index: u32,
+    ) -> Result<()> {
+        let result = unsafe {
+            sys::dxil_spv_converter_set_meta_descriptor(
+                self.handle,
+                meta.into(),
+                kind.into(),
+                desc_set,
+                binding_or_push_index,
+            )
+        };
+        check(result)
+    }
+
+    /// Returns `true` if the shader is compatible with Vulkan multiview.
+    ///
+    /// Must be called after [`Converter::run`].
+    pub fn is_multiview_compatible(&self) -> Result<bool> {
+        let mut result = 0u8;
+        let res = unsafe {
+            sys::dxil_spv_converter_is_multiview_compatible(self.handle, &mut result)
+        };
+        check(res)?;
+        Ok(result != 0)
+    }
 }
 
 impl Drop for Converter {

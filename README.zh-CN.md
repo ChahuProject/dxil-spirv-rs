@@ -91,6 +91,21 @@ let spirv_words = converter.compiled_spirv()?;
 | `dxil-spirv` | `dxil-spirv/` | 安全、惯用的包装器 — 你依赖的目标 |
 | `dxil-spirv-sys` | `dxil-spirv-sys/` | 原始 bindgen FFI + CMake 构建（传递链接） |
 
+### API 覆盖
+
+安全包装器暴露了上游 C API（`dxil_spv_*`）的**所有**函数，包括：
+
+- 核心转换（`parse` → `convert` → `compiled_spirv`）
+- 全部 8 个重映射回调（SRV、UAV、CBV、采样器、顶点输入、阶段 I/O、流输出）
+- 根签名 / 描述符映射（本地根常量、描述符表、参数映射）
+- Work Graphs / 网格节点内省（SM6.8）
+- 资源扫描（转换前内省）
+- RDAT 子对象（DXR 状态对象）
+- 线程日志回调和分配器上下文管理
+
+编译时测试（`tests/api_coverage.rs`）确保没有上游函数被意外遗漏。
+如果上游新增函数，测试会失败，直到被包装或明确记录为有意跳过。
+
 ## 许可证
 
 以下许可证任选其一：
