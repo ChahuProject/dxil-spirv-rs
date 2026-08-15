@@ -201,7 +201,7 @@ pub fn test_shader_in_process(shader_path: &str) -> ShaderTestResult {
     if let Err(e) = converter.run() {
         // Conversion failed. Classify as KnownFailure if it matches a
         // documented pattern, otherwise report as an unexpected failure.
-        let status = if let Some(reason) = requires_complex_remapper(shader_path) {
+        let status = if requires_complex_remapper(shader_path).is_some() {
             TestStatus::KnownFailure
         } else {
             TestStatus::Fail
