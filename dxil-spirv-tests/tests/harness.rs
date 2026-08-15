@@ -880,6 +880,61 @@ pub fn run_single_shader_child() -> bool {
     true
 }
 
+/// Run a child process with a timeout. If the child hangs (e.g. upstream
+/// C++ enters an infinite loop), it is killed and an error is returned.
+///
+/// Uses spawn + poll + kill instead of `.output()` which blocks forever.
+fn run_child_with_timeout(
+    exe: &Path,
+    shader_path: &str,
+    timeout: std::time::Duration,
+) -> std::io::Result<std::process::Output> {
+    use std::io::Read;
+    use std::process::{Command, Stdio};
+
+    let mut child = Command::new(exe)
+        .env(CHILD_SHADER_ENV, shader_path)
+        .arg("--exact")
+        .arg("__child_noop__")
+        .arg("--nocapture")
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .spawn()?;
+
+    let start = std::time::Instant::now();
+    loop {
+        match child.try_wait()? {
+            Some(_status) => {
+                // Child exited — collect output
+                let mut stdout = Vec::new();
+                let mut stderr = Vec::new();
+                if let Some(mut s) = child.stdout.take() {
+                    let _ = s.read_to_end(&mut stdout);
+                }
+                if let Some(mut s) = child.stderr.take() {
+                    let _ = s.read_to_end(&mut stderr);
+                }
+                return Ok(std::process::Output {
+                    status: _status,
+                    stdout,
+                    stderr,
+                });
+            }
+            None => {
+                if start.elapsed() > timeout {
+                    let _ = child.kill();
+                    let _ = child.wait();
+                    return Err(std::io::Error::new(
+                        std::io::ErrorKind::TimedOut,
+                        format!("child process timed out after {:?}", timeout),
+                    ));
+                }
+                std::thread::sleep(std::time::Duration::from_millis(10));
+            }
+        }
+    }
+}
+
 /// Run a single shader in a fresh subprocess, returning its result.
 ///
 /// A child that crashes (abort / assertion) yields a `Fail` result with a
@@ -905,12 +960,7 @@ pub fn test_shader(shader_path: &str) -> ShaderTestResult {
     }
 
     let exe = std::env::current_exe().expect("current exe");
-    let output = std::process::Command::new(exe)
-        .env(CHILD_SHADER_ENV, shader_path)
-        .arg("--exact")
-        .arg("__child_noop__") // a test name that matches nothing real
-        .arg("--nocapture")
-        .output();
+    let output = run_child_with_timeout(&exe, shader_path, std::time::Duration::from_secs(30));
 
     match output {
         Ok(out) => {
@@ -963,7 +1013,7 @@ pub fn test_shader(shader_path: &str) -> ShaderTestResult {
             path: shader_path.to_string(),
             status: TestStatus::Fail,
             spirv_len: None,
-            error: Some(format!("failed to spawn child: {}", e)),
+            error: Some(format!("child process error: {}", e)),
             glsl_md5: None,
         },
     }
