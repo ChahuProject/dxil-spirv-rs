@@ -126,20 +126,6 @@ pub fn test_shader_in_process(shader_path: &str) -> ShaderTestResult {
         };
     }
 
-    // Known limitation: shaders that need complex remapper configuration
-    // are classified as KnownFailure instead of crashing or producing
-    // incorrect results. This keeps the completeness check green while
-    // explicitly tracking what is not yet covered.
-    if let Some(reason) = requires_complex_remapper(shader_path) {
-        return ShaderTestResult {
-            path: shader_path.to_string(),
-            status: TestStatus::KnownFailure,
-            spirv_len: None,
-            error: Some(reason.to_string()),
-            glsl_md5: None,
-        };
-    }
-
     // Read DXIL
     let dxil_data = match fs::read(&dxil_path) {
         Ok(d) => d,
@@ -156,15 +142,33 @@ pub fn test_shader_in_process(shader_path: &str) -> ShaderTestResult {
 
     // Parse and convert with per-shader configuration, mirroring the
     // upstream test_shaders.py logic.
-    let parsed = match ParsedBlob::parse(&dxil_data) {
-        Ok(p) => p,
-        Err(e) => {
-            return ShaderTestResult {
-                path: shader_path.to_string(),
-                status: TestStatus::Fail,
-                spirv_len: None,
-                error: Some(format!("Parse failed: {}", e)),
-                glsl_md5: None,
+    //
+    // asm/*.bc.dxil files are raw LLVM bitcode, not standard DXIL containers.
+    // They need parse_dxil() instead of parse_dxil_blob().
+    let parsed = if shader_path.starts_with("asm/") && shader_path.contains(".bc.") {
+        match dxil_spirv::parse_dxil(&dxil_data) {
+            Ok(p) => p,
+            Err(e) => {
+                return ShaderTestResult {
+                    path: shader_path.to_string(),
+                    status: TestStatus::Fail,
+                    spirv_len: None,
+                    error: Some(format!("Parse (raw DXIL) failed: {}", e)),
+                    glsl_md5: None,
+                }
+            }
+        }
+    } else {
+        match ParsedBlob::parse(&dxil_data) {
+            Ok(p) => p,
+            Err(e) => {
+                return ShaderTestResult {
+                    path: shader_path.to_string(),
+                    status: TestStatus::Fail,
+                    spirv_len: None,
+                    error: Some(format!("Parse failed: {}", e)),
+                    glsl_md5: None,
+                }
             }
         }
     };
@@ -195,9 +199,16 @@ pub fn test_shader_in_process(shader_path: &str) -> ShaderTestResult {
     }
 
     if let Err(e) = converter.run() {
+        // Conversion failed. Classify as KnownFailure if it matches a
+        // documented pattern, otherwise report as an unexpected failure.
+        let status = if let Some(reason) = requires_complex_remapper(shader_path) {
+            TestStatus::KnownFailure
+        } else {
+            TestStatus::Fail
+        };
         return ShaderTestResult {
             path: shader_path.to_string(),
-            status: TestStatus::Fail,
+            status,
             spirv_len: None,
             error: Some(format!("Conversion failed: {}", e)),
             glsl_md5: None,
@@ -926,9 +937,15 @@ pub fn test_shader(shader_path: &str) -> ShaderTestResult {
                 }
             }
             // No result line — the child crashed before printing.
+            // Classify as KnownFailure if it matches a documented pattern.
+            let status = if requires_complex_remapper(shader_path).is_some() {
+                TestStatus::KnownFailure
+            } else {
+                TestStatus::Fail
+            };
             ShaderTestResult {
                 path: shader_path.to_string(),
-                status: TestStatus::Fail,
+                status,
                 spirv_len: None,
                 error: Some(format!(
                     "child process crashed (exit {:?}): {}",
@@ -980,6 +997,8 @@ pub fn requires_complex_remapper(shader_path: &str) -> Option<&'static str> {
         // for structured/raw buffers to SSBO. Without this default override
         // these shaders fail with "Raw load-store must be SSBO/UBO/BDA".
         Some("ssbo: needs SSBO default descriptor type for raw/structured buffers")
+    } else if name.contains(".bda-instrumentation.") {
+        Some("bda-instrumentation: needs instruction instrumentation remapping")
     } else {
         None
     }

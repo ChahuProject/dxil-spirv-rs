@@ -101,11 +101,47 @@ fn test_resources() {
 }
 
 /// Test all shaders in the asm category (precompiled DXIL)
-/// Note: asm shaders may crash the converter due to missing features
+/// Note: asm shaders use raw LLVM bitcode and need parse_dxil
 #[test]
-#[ignore] // Ignored by default - causes crashes in some shaders
 fn test_asm() {
     run_category("asm");
+}
+
+// Auto-generated category tests for every directory under tests/shaders/.
+// This guarantees that when upstream adds a new directory, it gets tested
+// automatically — no manual registration needed.
+macro_rules! category_tests {
+    ($($name:ident => $dir:expr),* $(,)?) => {
+        $(
+            #[test]
+            fn $name() {
+                run_category($dir);
+            }
+        )*
+    };
+}
+
+category_tests! {
+    test_ags => "ags",
+    test_alloca_opts => "alloca-opts",
+    test_auto_barrier => "auto-barrier",
+    test_control_flow => "control-flow",
+    test_descriptor_qa => "descriptor_qa",
+    test_dxil_builtin => "dxil-builtin",
+    test_fp16 => "fp16",
+    test_heap_robustness => "heap-robustness",
+    test_instrumentation => "instrumentation",
+    test_llvm_builtin => "llvm-builtin",
+    test_memory_model => "memory-model",
+    test_nvapi => "nvapi",
+    test_opts => "opts",
+    test_raw_access => "raw-access",
+    test_rov => "rov",
+    test_sampler_feedback => "sampler-feedback",
+    test_semantics => "semantics",
+    test_vectorization => "vectorization",
+    test_view_instancing => "view-instancing",
+    test_vkmm => "vkmm",
 }
 
 fn run_category(category: &str) {
@@ -191,7 +227,18 @@ fn test_metrics_report() {
     println!("Skipped: {} ({:.1}%)", skipped, 100.0 * skipped as f64 / total as f64);
 
     // Hard thresholds
-    assert!(failed == 0, "Unexpected failures detected: {}", failed);
+    if failed > 0 {
+        let failures: Vec<_> = results
+            .iter()
+            .filter(|r| r.status == TestStatus::Fail)
+            .map(|r| format!("  - {}: {:?}", r.path, r.error))
+            .collect();
+        panic!(
+            "Unexpected failures detected ({}):\n{}",
+            failed,
+            failures.join("\n")
+        );
+    }
     assert!(skipped == 0, "Skipped shaders detected (missing DXIL?): {}", skipped);
 
     // Known failure rate should not exceed 20% (current: ~55% due to remapper
