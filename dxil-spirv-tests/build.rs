@@ -60,6 +60,24 @@ fn main() {
         },
     };
 
+    // Declare the custom cfg unconditionally so rustc's unexpected_cfgs lint
+    // recognizes it whether or not it is set on this build.
+    println!("cargo:rustc-check-cfg=cfg(dxc_unavailable)");
+
+    // DXC ships as a Windows x64 binary. On non-Windows hosts the downloaded
+    // dxc.exe cannot be executed (Permission denied / Exec format error), so
+    // no .dxil files can be produced. Detect that here and emit a cfg so the
+    // e2e suite skips gracefully instead of failing its "no skipped shaders"
+    // completeness assertion.
+    if !is_dxc_runnable(&dxc_path) {
+        println!(
+            "cargo:warning=DXC at {} is not runnable on this host; skipping shader compilation",
+            dxc_path.display()
+        );
+        println!("cargo:rustc-cfg=dxc_unavailable");
+        return;
+    }
+
     println!("cargo:warning=Using DXC at {}", dxc_path.display());
     compile_shaders(&dxc_path, &test_shaders);
 
@@ -188,6 +206,18 @@ fn find_dxc() -> Option<PathBuf> {
     }
 
     None
+}
+
+/// Check whether the given DXC executable can actually be executed on this
+/// host (regardless of version). Returns false when the binary is for a
+/// different platform (e.g. a Windows `dxc.exe` on Linux/macOS), which makes
+/// the OS refuse to spawn it.
+fn is_dxc_runnable(path: &Path) -> bool {
+    Command::new(path)
+        .arg("--version")
+        .output()
+        .map(|o| o.status.success())
+        .unwrap_or(false)
 }
 
 /// Check whether the given DXC executable is new enough for SM 6.9.

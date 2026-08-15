@@ -84,6 +84,10 @@ fn test_completeness_check() {
 /// Smoke test: verify a few known shaders work
 #[test]
 fn test_smoke() {
+    if cfg!(dxc_unavailable) {
+        eprintln!("skipping smoke test: DXC is not runnable on this host");
+        return;
+    }
     // Use DXC-compiled shaders (standard DXIL container), not asm/*.bc.dxil
     // which are raw LLVM bitcode and need parse_dxil instead of parse_dxil_blob.
     // Use simple shaders without special markers so the GLSL reference matches.
@@ -203,6 +207,10 @@ category_tests! {
 }
 
 fn run_category(category: &str) {
+    if cfg!(dxc_unavailable) {
+        eprintln!("skipping category '{category}': DXC is not runnable on this host");
+        return;
+    }
     let tested = discover_tested_shaders();
     let mut passed = 0;
     let mut failed = 0;
@@ -263,6 +271,10 @@ fn run_category(category: &str) {
 /// for detecting regressions, completeness gaps, and environment issues.
 #[test]
 fn test_metrics_report() {
+    if cfg!(dxc_unavailable) {
+        eprintln!("skipping metrics report: DXC is not runnable on this host");
+        return;
+    }
     let tested = discover_tested_shaders();
     let mut results = Vec::new();
 
