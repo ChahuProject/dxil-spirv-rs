@@ -303,6 +303,50 @@ of these locations:
 6. `dxil-spirv/tests/api_coverage.rs` — `KNOWN_MISSING` entries if functions become conditional
 7. This SKILL.md — KB-8 table and this checklist
 
+### KB-10 · End-to-end test infrastructure
+
+The `dxil-spirv-tests` crate provides full end-to-end validation against the
+upstream shader test suite. Key facts for maintenance:
+
+**Test data flow:**
+```
+dxil-spirv-sys/dxil-spirv/shaders/  ──sync──▶  tests/shaders/  (git-ignored)
+dxil-spirv-sys/dxil-spirv/reference/ ──sync──▶  tests/reference/ (git-ignored)
+                                              ↓ DXC 1.9.2602.17
+                                         tests/shaders/*.dxil
+```
+
+**Critical files:**
+- `dxil-spirv-tests/build.rs` — syncs shaders, downloads DXC, compiles DXIL
+- `dxil-spirv-tests/tests/harness.rs` — test driver + converter configuration
+- `dxil-spirv-tests/tests/e2e.rs` — test entry points (completeness, smoke, categories, metrics)
+
+**Subprocess isolation**: Each shader runs in a fresh child process because
+the upstream C++ can hit hard asserts (e.g. `SpvBuilder.cpp:754`). Never
+remove this isolation — without it, one bad shader kills the entire test run.
+
+**DXC version lock**: `DXC_VERSION` in `dxil-spirv-tests/build.rs` is pinned
+to `1.9.2602.17` (first production SM6.9 release). Do not downgrade; SM6.9
+shaders will fail to compile. If upgrading, update both `DXC_VERSION` and
+`DXC_ASSET_NAME` (asset names use dates, not versions).
+
+**Known failure classification**: `requires_complex_remapper()` in
+`harness.rs` classifies shaders that need per-shader remapper state as
+`KnownFailure`. This is intentional — it keeps the completeness check green
+while explicitly tracking coverage gaps. Current rate: ~33.7% (279/829).
+
+**When upstream adds shaders:**
+1. `test_completeness_check` fails (hard stop)
+2. `cargo build -p dxil-spirv-tests` syncs + compiles new shaders
+3. New shaders may pass, fail, or need `KnownFailure` classification
+4. Update `requires_complex_remapper()` if new markers appear
+
+**When upstream changes reference outputs:**
+1. Strict mode (`DXIL_SPIRV_STRICT_GLSL=1`) will fail with MD5 mismatch
+2. Verify the change is legitimate (formatting vs functional)
+3. If legitimate, no action needed — our reference is only for strict mode
+4. If functional difference, investigate our converter configuration
+
 ---
 
 ## Hard rules
