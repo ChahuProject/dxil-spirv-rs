@@ -34,7 +34,7 @@ Because the code is machine-generated, please treat it with the same care you wo
 ### Clone & build
 
 ```sh
-git clone --recursive https://github.com/pengjiaxusz/dxil-spirv-rs.git
+git clone --recursive https://github.com/ChahuProject/dxil-spirv-rs.git
 cd dxil-spirv-rs
 
 # if you already cloned without --recursive:
