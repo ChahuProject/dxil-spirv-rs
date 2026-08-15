@@ -246,8 +246,13 @@ fn download_dxc(workspace_root: &Path) -> Result<PathBuf, String> {
             .map_err(|e| format!("zip entry error: {e}"))?;
         let name = file.name().to_string();
 
-        // Only extract the files we need
-        if name.ends_with("dxc.exe") || name.ends_with("dxil.dll") || name.ends_with("dxcompiler.dll") {
+        // Only extract x64 binaries (the archive contains x86, x64, and arm64;
+        // without the prefix filter, extraction order is arbitrary and we might
+        // silently pick up the 32-bit build).
+        let is_needed = name.ends_with("dxc.exe")
+            || name.ends_with("dxil.dll")
+            || name.ends_with("dxcompiler.dll");
+        if name.starts_with("bin/x64/") && is_needed {
             let out_path = cache_dir.join(Path::new(&name).file_name().unwrap());
             let mut out_file = fs::File::create(&out_path)
                 .map_err(|e| format!("create failed for {}: {e}", out_path.display()))?;
