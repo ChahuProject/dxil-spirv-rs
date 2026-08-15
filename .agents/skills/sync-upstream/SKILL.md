@@ -14,8 +14,11 @@ upstream C library and mature binding patterns.
 1. **Upstream C library** — `HansKristian-Work/dxil-spirv`. Source of truth
    for the C API. (The build consumes the submodule at
    `dxil-spirv-sys/dxil-spirv`.)
-2. **Reference binding crate** — `grovesNL/spirv_cross`. Template for
-   build.rs / bindgen / safe-wrapper structure.
+2. **Reference binding crates** — `grovesNL/spirv_cross` (classic template for
+   build.rs / bindgen / safe-wrapper structure) and
+   `SnowflakePowered/spirv-cross2-rs` (actively maintained modern successor:
+   `-sys` + safe-layer split, `Handle<T>` instance tagging, Arc-guarded
+   context lifetimes, `+SHORTSHA` upstream-pinned versioning).
 
 ### Reference clones live INSIDE this skill (on demand)
 
@@ -27,6 +30,7 @@ the skill's own directory, which is git-ignored:
 ```
 .agents/skills/sync-upstream/references/dxil-spirv
 .agents/skills/sync-upstream/references/spirv_cross
+.agents/skills/sync-upstream/references/spirv-cross2-rs
 ```
 
 These clones are **read-only mirrors**, never build inputs. The build only
@@ -86,6 +90,14 @@ if (-not (Test-Path "$refs/spirv_cross")) {
     git clone https://github.com/grovesNL/spirv_cross.git "$refs/spirv_cross"
 }
 git -C "$refs/spirv_cross" submodule update --init --recursive
+
+# spirv-cross2-rs: modern reference for soundness patterns (Handle<T>,
+# Arc-guarded context, +SHORTSHA versioning). Vendored upstream lives in
+# spirv-cross-sys/native/SPIRV-Cross.
+if (-not (Test-Path "$refs/spirv-cross2-rs")) {
+    git clone https://github.com/SnowflakePowered/spirv-cross2-rs.git "$refs/spirv-cross2-rs"
+}
+git -C "$refs/spirv-cross2-rs" submodule update --init --recursive
 ```
 
 If a clone already exists, `fetch` and re-checkout the pinned commit; do not
@@ -99,6 +111,7 @@ Idempotent; run once per session (after Step 0):
 codegraph init <repo-root>
 codegraph init "$refs/dxil-spirv"
 codegraph init "$refs/spirv_cross"
+codegraph init "$refs/spirv-cross2-rs"
 ```
 
 Use `codegraph explore "<symbol>"` for cross-repo questions (e.g. "which

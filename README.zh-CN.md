@@ -19,7 +19,7 @@ DXBC / DXIL 容器 ──dxil-spirv──▶ SPIR-V ──SPIRV-Cross──▶ H
 1. **底层** — 上游 `dxil-spirv` C++ 库（MIT 许可证，Hans-Kristian Arntzen / Valve）作为 git 子模块 vendored 在 `dxil-spirv-sys/dxil-spirv` 下。代理未重新实现任何转换逻辑；仅进行绑定。
 2. **sys 层（`dxil-spirv-sys`）** — 一个 `build.rs`，编译上游 `dxil-spirv-c-static` CMake 目标，并对上游 C 头文件 `dxil_spirv_c.h` 运行 [bindgen](https://github.com/rust-lang/rust-bindgen) 生成原始 FFI 接口。
 3. **安全层（`dxil-spirv`）** — RAII 包装器（`ParsedBlob`、`Converter`）、类型化的选项/绑定/重映射结构体，以及 `thiserror` 错误类型，全部由代理基于生成的绑定编写。
-4. **参考驱动** — 绑定结构和 `build.rs` 模式以成熟的 [`grovesNL/spirv_cross`](https://github.com/grovesNL/spirv_cross) crate 为模板。捆绑的维护技能（`.agents/skills/sync-upstream`）编码了已验证的事实（静态链接闭包、CRT 规则、bindgen 边界、回调蹦床模式），以便未来更新可由代理安全地重新生成。
+4. **参考驱动** — 绑定结构和 `build.rs` 模式以成熟的 [`grovesNL/spirv_cross`](https://github.com/grovesNL/spirv_cross) crate 和积极维护的 [`SnowflakePowered/spirv-cross2-rs`](https://github.com/SnowflakePowered/spirv-cross2-rs)（现代化的 `-sys` + 安全层架构，具有更强的类型/生命周期安全模式）为模板。捆绑的维护技能（`.agents/skills/sync-upstream`）编码了已验证的事实（静态链接闭包、CRT 规则、bindgen 边界、回调蹦床模式），以便未来更新可由代理安全地重新生成。
 
 由于代码是机器生成的，请像对待任何新依赖一样谨慎：生产使用前请审查，发现任何异常请报告。欢迎 Issue 和人类审查。
 
