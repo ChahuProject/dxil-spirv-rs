@@ -14,4 +14,4 @@ links = "dxil-spirv-c"
 
 [build-dependencies]
 cmake = "0.1"
-bindgen = "0.69"
+bindgen = "0.72"

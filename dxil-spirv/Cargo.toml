@@ -13,4 +13,4 @@ readme = "../README.md"
 
 [dependencies]
 dxil-spirv-sys = { path = "../dxil-spirv-sys", version = "0.1.0" }
-thiserror = "1"
+thiserror = "2"
