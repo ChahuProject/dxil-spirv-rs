@@ -314,20 +314,22 @@ fn configure_converter(converter: &mut Converter, shader_path: &str) -> dxil_spi
         minimum_size: 32,
         maximum_size: 64,
     })?;
-    // Upstream dxil_spirv.cpp always passes ssbo_alignment=1 (its CLI
-    // default) to the converter, overriding the library's internal default
-    // of 16. Without this, non-bindless SSBO buffers with natural alignment
-    // < 16 fail with "SSBO offset is only supported for bindless SSBOs".
+    // Upstream CLI defaults to --ssbo-alignment 1 (dxil_spirv.cpp:269).
+    // The library-internal default is 16 (converter_impl.hpp:726), which
+    // would force every non-bindless SSBO descriptor to require an offset
+    // buffer, breaking all `.ssbo.` shaders that use 16-byte-aligned types
+    // (e.g. float4). Mirror the CLI default so non-bindless SSBO works.
     converter.add_option(&ConverterOption::SsboAlignment { alignment: 1 })?;
 
     // ── Bindless / heap markers ─────────────────────────────────────────
+    // Upstream --bindless raises root_constant_word_count to at least 8 to
+    // accommodate descriptor table offsets for SRV/UAV/CBV/sampler heaps.
+    // descriptor-qa needs additional space for its own descriptor tables.
+    // Also adds 64 dummy root-parameter mappings and enables BDA.
     if name.contains(".bindless.") {
-        // Upstream --bindless: sets remapper.bindless = true and raises
-        // root_constant_word_count to at least 8. It also adds 64 dummy
-        // root-parameter mappings and enables PhysicalStorageBuffer (BDA).
-        // Note: it does NOT enable BindlessCbvSsboEmulation — that is only
-        // enabled by the separate --bindless-cbv-as-ssbo flag (.cbv-as-ssbo.).
-        converter.set_root_constant_word_count(8);
+        let base_words = 8;
+        let extra_words = if name.contains(".descriptor-qa.") { 4 } else { 0 };
+        converter.set_root_constant_word_count(base_words + extra_words);
         for i in 0..64u32 {
             converter.add_root_parameter_mapping(i, 4 * i);
         }
