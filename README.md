@@ -1,5 +1,7 @@
 # dxil-spirv-rs
 
+[English](README.md) | [中文](README.zh-CN.md)
+
 Safe Rust bindings to [dxil-spirv](https://github.com/HansKristian-Work/dxil-spirv) — convert D3D11/D3D12 shader bytecode (DXBC container or DXIL bitcode) into SPIR-V.
 
 Feed the resulting SPIR-V into a cross-compiler such as [SPIRV-Cross](https://github.com/KhronosGroup/SPIRV-Cross) to recover readable **HLSL / GLSL / MSL** source, or consume it directly with Vulkan tooling. Typical uses: shader inspection / debugging tools, reverse-engineering D3D12 shaders, D3D→Vulkan translation research.
@@ -88,6 +90,10 @@ let spirv_words = converter.compiled_spirv()?;
 |---|---|---|
 | `dxil-spirv` | `dxil-spirv/` | Safe, idiomatic wrapper — what you depend on |
 | `dxil-spirv-sys` | `dxil-spirv-sys/` | Raw bindgen FFI + CMake build (linked transitively) |
+
+## A note on SPIRV-Cross duplication
+
+This crate statically links its own copy of SPIRV-Cross (via dxil-spirv). If your project also depends on the `spirv_cross` crate, both will compile their own copy of the SPIRV-Cross sources. This is intentional and safe; the two copies do not interfere.
 
 ## License
 
