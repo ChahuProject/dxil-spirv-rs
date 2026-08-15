@@ -6,12 +6,14 @@ members = [
 ]
 
 [workspace.package]
-version = "0.1.0"
+# Semver build metadata carries the vendored upstream dxil-spirv C API version
+# (DXIL_SPV_API_VERSION_*). crates.io accepts and ignores the `+...` suffix.
+version = "0.1.0+dxil-spirv.2.72.1"
 edition = "2021"
 rust-version = "1.70"
 license = "MIT OR Apache-2.0"
-repository = "https://github.com/pengjiaxusz/dxil-spirv-rs"
-homepage = "https://github.com/pengjiaxusz/dxil-spirv-rs"
+repository = "https://github.com/ChahuProject/dxil-spirv-rs"
+homepage = "https://github.com/ChahuProject/dxil-spirv-rs"
 keywords = ["dxil", "spirv", "d3d12", "shader", "decompile"]
 categories = ["graphics", "ffi", "parser"]
 

@@ -133,6 +133,9 @@ Run this EVERY time the upstream commit changes. Check the diff of
    `target_link_libraries`? Update the link list in `build.rs` (see KB-4).
 6. **Compile flags** — changed `DXIL_SPV_CXX_FLAGS` or feature macros
    (`AMD_EXTENSIONS`, `HAVE_LLVMBC`, `DXBC_SPV_ENABLE_SM5`)? Mirror in build.rs.
+7. **Crate version sync** — after any upstream bump, update the version in the
+   workspace `Cargo.toml` per the Versioning rule below so the published
+   version always advertises the upstream C API it binds.
 
 ### Step 4 — Sync the bindings
 
@@ -143,9 +146,33 @@ Run this EVERY time the upstream commit changes. Check the diff of
 
 ### Step 5 — Verify against the acceptance gate
 
-Run the full gate. Fix until green.
+Run the full gate (build + clippy + test). Fix until green. **Do not mark the
+task complete, and do not commit, while any leg is red.**
 
 ---
+
+## Versioning rule
+
+The crate version lives in the workspace `Cargo.toml` (`[workspace.package]`)
+and uses semver **build metadata** to advertise the vendored upstream C API
+version:
+
+```text
+<crate-version>+dxil-spirv.<UPSTREAM_MAJOR.MINOR.PATCH>
+e.g.  0.1.0+dxil-spirv.2.72.1
+```
+
+- `+dxil-spirv.X.Y.Z` MUST always equal the `DXIL_SPV_API_VERSION_*` macros of
+  the pinned upstream submodule. crates.io accepts and ignores the `+...`
+  suffix, so it never affects version resolution — it is purely informational.
+- When the upstream commit bump changes `DXIL_SPV_API_VERSION_*`, update the
+  suffix to match.
+- Bump the leading crate version (`0.1.0` part) independently, by normal
+  semver rules for the Rust API: breaking safe-API change → minor/major bump;
+  backward-compatible addition or upstream-only refresh → patch bump.
+- After editing the version, re-run the acceptance gate and confirm
+  `cargo publish --dry-run` still packages cleanly (version string validity is
+  checked there).
 
 ## Knowledge base (verified facts — do not rediscover)
 
@@ -238,6 +265,9 @@ library is missing or mis-ordered here.
 - NEVER commit the skill's `references/` clones (they are git-ignored).
 - NEVER point the build at any reference clone; only `dxil-spirv-sys/dxil-spirv`.
 - Keep the public safe API backward-compatible within a minor version bump.
+- ALWAYS keep the version's `+dxil-spirv.X.Y.Z` suffix in sync with the pinned
+  upstream `DXIL_SPV_API_VERSION_*` (see the Versioning rule).
 - Do NOT skip the acceptance gate, and do NOT report completion on a red build.
+  `cargo test` is mandatory — it is the only leg that forces a real link.
 - Do NOT stop to ask the user for decisions the knowledge base or a reference
   repo can answer.
