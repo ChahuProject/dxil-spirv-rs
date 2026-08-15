@@ -347,6 +347,11 @@ impl Drop for Converter {
     }
 }
 
+// Upstream conversion is single-threaded and synchronous: remapper callbacks
+// fire only during `dxil_spv_converter_run` on the calling thread, with no
+// background workers and no concurrent re-entry. The handle may therefore move
+// across threads (`Send`), but concurrent `run()` on one converter is unsafe,
+// so we deliberately do NOT implement `Sync`.
 unsafe impl Send for Converter {}
 
 /// Shader features that can be queried with [`Converter::uses_shader_feature`].
