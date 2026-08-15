@@ -7,18 +7,23 @@
 //! # Example
 //!
 //! ```no_run
-//! let blob: Vec<u8> = std::fs::read("shader.dxil")?;
+//! # fn main() -> dxil_spirv::Result<()> {
+//! let blob: Vec<u8> = std::fs::read("shader.dxil").expect("read shader");
 //! let spirv = dxil_spirv::convert_to_spirv(&blob)?;
 //! println!("produced {} SPIR-V words", spirv.len());
-//! # Ok::<(), dxil_spirv::Error>(())
+//! # Ok(())
+//! # }
 //! ```
 
 #![forbid(unsafe_op_in_unsafe_fn)]
 #![warn(missing_docs)]
 
+mod binding;
 mod converter;
 mod error;
+mod options;
 mod parsed_blob;
+mod remapper;
 mod stage;
 
 pub use converter::Converter;

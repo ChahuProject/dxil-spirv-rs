@@ -20,6 +20,14 @@ pub enum Error {
     /// The converter produced no SPIR-V output.
     #[error("converter produced no SPIR-V output")]
     NoOutput,
+
+    /// A string passed to the API contained an interior NUL byte.
+    #[error("string contains an interior NUL byte")]
+    InvalidString,
+
+    /// The requested option is not supported by the linked dxil-spirv library.
+    #[error("unsupported dxil-spirv option: {0}")]
+    UnsupportedFeature(i32),
 }
 
 pub(crate) fn check(result: sys::dxil_spv_result) -> Result<()> {

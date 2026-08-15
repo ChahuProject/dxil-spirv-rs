@@ -17,11 +17,34 @@ Rust bindings by consulting two authoritative sources:
 | Path | Repo | Role |
 |---|---|---|
 | `references/dxil-spirv` | `HansKristian-Work/dxil-spirv` | Upstream C API (`dxil_spirv_c.h`), CMake targets |
-| `references/spirv_cross` | `grovesNL/spirv_cross` | Binding-structure template (cc/bindgen/feature layout) |
+| `references/spirv_cross` | `grovesNL/spirv_cross` | Binding-structure template (cc/bindgen/feature layout, safe-wrapper patterns) |
 
 These are **reference material only** — they are NOT build inputs and MUST NOT
 be linked or compiled. The actual build consumes the vendored copy at
 `dxil-spirv-sys/dxil-spirv/`.
+
+## Autonomy rule — never stop to ask the user mid-run
+
+This skill is designed to run to completion without human intervention.
+When you hit a design decision, resolve it by **consulting the reference
+repos, not by asking the user**. Specifically:
+
+- **"How do I wrap this C API safely?"** → find the analogous wrapper in
+  `references/spirv_cross` (use codegraph: `codegraph explore "<pattern>"`)
+  and mirror its pattern (RAII handle, builder for options, `Drop` for
+  cleanup, `Send`/`Sync` policy, error mapping).
+- **"How do I bridge a C callback with userdata into Rust?"** → copy the
+  trampoline pattern from any reference binding that exposes callbacks
+  (`extern "C" fn` shim + boxed closure + raw `*mut c_void` userdata).
+- **"How should build.rs handle this upstream quirk?"** → check how
+  `references/spirv_cross/spirv_cross/build.rs` solves the equivalent
+  problem (C++ flags, exceptions, RTTI, MSVC vs GNU).
+- **"Should this be a feature flag?"** → follow spirv_cross's precedent
+  (optional output languages behind cargo features).
+
+Only if a decision has **no precedent in any reference repo AND** is genuinely
+irreversible (e.g. a breaking public-API rename) may you pause and ask.
+Everything else: pick the reference-aligned option and proceed.
 
 ## Prerequisites
 
@@ -58,13 +81,28 @@ in `dxil-spirv/src/converter.rs`".
 
 1. Diff the upstream C header between the old and new commit:
    `git diff <old>..<new> -- dxil_spirv_c.h`.
-2. For every new/changed `dxil_spv_*` function or enum, decide:
+2. For every new/changed `dxil_spv_*` function or enum:
    - **sys layer** — bindgen picks it up automatically; verify with
      `cargo build -p dxil-spirv-sys`.
-   - **safe layer** — add/extend the RAII wrapper in `dxil-spirv/src/`
-     following the existing `ParsedBlob`/`Converter` pattern.
+   - **safe layer** — add/extend the RAII wrapper in `dxil-spirv/src/`.
+     Follow the existing `ParsedBlob`/`Converter` pattern, and consult
+     `references/spirv_cross` for any design question (see Autonomy rule).
 3. Mirror build-system changes from `references/spirv_cross` (e.g. new feature
    flags, MSVC flag tweaks, bindgen config changes).
+
+### Coverage policy
+
+Wrap **all** upstream functions that a shader-inspection / cross-compilation
+consumer could reasonably need, including:
+
+- core conversion (parse → create → run → get SPIR-V) — already done;
+- option queries (`supports_option`, `uses_shader_feature`, wave-size and
+  workgroup getters) and entry-point helpers (`set_entry_point`,
+  `get_compiled_entry_point`, `get_entry_index_by_name`, name lookups);
+- debug/IR helpers (`get_disassembled_ir`, `get_raw_ir`, `dump_llvm_ir`);
+- resource remappers and root-descriptor mapping (callback-based) — bridge
+  them with the standard trampoline pattern; do NOT skip them merely because
+  they involve callbacks.
 
 ## Step 4 — Verify
 
@@ -82,3 +120,4 @@ All three must pass before committing.
 - NEVER point the build at `references/`; the build must only use
   `dxil-spirv-sys/dxil-spirv`.
 - Keep the public safe API backward-compatible within a minor version bump.
+- Do NOT stop to ask the user for decisions that a reference repo can answer.

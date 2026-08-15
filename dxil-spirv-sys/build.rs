@@ -33,9 +33,18 @@ fn main() {
 fn build_with_cmake(upstream: &Path) -> PathBuf {
     let mut cfg = cmake::Config::new(upstream);
 
+    // Match the Rust profile so the C++ runtime (CRT) is consistent with the
+    // Rust side: debug Rust links MSVCRTD, release Rust links MSVCRT. Mixing
+    // them produces unresolved `_CrtDbgReport` / `_calloc_dbg` symbols.
+    let profile = env::var("PROFILE").unwrap_or_else(|_| "release".to_string());
+    let build_type = if profile == "debug" { "Debug" } else { "Release" };
+
     cfg.define("DXIL_SPIRV_CLI", "OFF")
         .define("DXIL_SPIRV_NATIVE_LLVM", "OFF")
-        .define("CMAKE_BUILD_TYPE", "Release")
+        .define("CMAKE_BUILD_TYPE", build_type)
+        // Use the dynamic CRT (/MD or /MDd) to match Rust's default linkage.
+        .define("CMAKE_MSVC_RUNTIME_LIBRARY", "MultiThreaded$<$<CONFIG:Debug>:Debug>DLL")
+        .profile(build_type)
         // Only build what we need: the static C API target.
         .build_target("dxil-spirv-c-static")
         .cxxflag("/EHsc"); // MSVC: enable C++ exceptions (dxil-spirv needs them)
@@ -64,12 +73,20 @@ fn link_static(dst: &Path) {
     // third_party/…) land in their own build folders.
     register_lib_dirs(&build_dir);
 
+    // Order matters for static linking: dependents come before their
+    // dependencies. dxil-converter pulls in the LLVM bitcode reader
+    // (llvm-bc / bc-decoder), the DXBC fallback (dxbc-spirv), and the
+    // glslang SPIR-V builder used by spirv-module.
     for lib in [
         "dxil-spirv-c-static",
         "dxil-converter",
         "spirv-module",
         "dxil-utils",
         "dxil-debug",
+        "dxbc-spirv",
+        "glslang-spirv-builder",
+        "llvm-bc",
+        "bc-decoder",
     ] {
         println!("cargo:rustc-link-lib=static={lib}");
     }
@@ -87,7 +104,7 @@ fn register_lib_dirs(dir: &Path) {
             let path = entry.path();
             if path.is_dir() {
                 register_lib_dirs(&path);
-            } else if path.extension().map_or(false, |e| e == "lib") {
+            } else if path.extension().is_some_and(|e| e == "lib") {
                 has_lib = true;
             }
         }
