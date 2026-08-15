@@ -1,0 +1,3 @@
+# Reference repositories cloned on demand by the sync-upstream skill.
+# These are AI-comparison mirrors only — never commit them.
+references/

@@ -11,12 +11,25 @@ upstream C library and mature binding patterns.
 
 ## Authoritative sources
 
-1. **Upstream C library** — `references/dxil-spirv` (mirrors the build
-   submodule `dxil-spirv-sys/dxil-spirv`). Source of truth for the C API.
-2. **Reference binding crate** — `references/spirv_cross` (`grovesNL/spirv_cross`).
-   Template for build.rs / bindgen / safe-wrapper structure.
+1. **Upstream C library** — `HansKristian-Work/dxil-spirv`. Source of truth
+   for the C API. (The build consumes the submodule at
+   `dxil-spirv-sys/dxil-spirv`.)
+2. **Reference binding crate** — `grovesNL/spirv_cross`. Template for
+   build.rs / bindgen / safe-wrapper structure.
 
-`references/*` are **read-only mirrors**, never build inputs. The build only
+### Reference clones live INSIDE this skill (on demand)
+
+The reference repos are NOT git submodules and are NOT part of a normal
+clone — a user who only wants to *use* the crate should not download hundreds
+of MB of reference source. They are cloned **on demand by this skill** into
+the skill's own directory, which is git-ignored:
+
+```
+.agents/skills/sync-upstream/references/dxil-spirv
+.agents/skills/sync-upstream/references/spirv_cross
+```
+
+These clones are **read-only mirrors**, never build inputs. The build only
 consumes `dxil-spirv-sys/dxil-spirv`.
 
 ## Autonomy rule — never stop to ask the user mid-run
@@ -47,14 +60,45 @@ surface at final link time, which `cargo build` of an rlib skips — always run
 
 ## Workflow
 
+### Step 0 — Prepare reference clones (first run, or to refresh)
+
+Discover or create the on-demand clones inside this skill directory, pinned to
+deterministic commits. Do NOT clone into the crate root and do NOT commit them.
+
+```powershell
+$skill = "<repo-root>/.agents/skills/sync-upstream"
+$refs  = "$skill/references"
+New-Item -ItemType Directory -Force $refs | Out-Null
+
+# Upstream dxil-spirv: rolling master, no tags. Pin to the SAME commit as the
+# build submodule so the reference matches what we compile against.
+$buildCommit = git -C <repo-root> submodule status dxil-spirv-sys/dxil-spirv | ForEach-Object { ($_ -split '\s+')[1] }
+if (-not (Test-Path "$refs/dxil-spirv")) {
+    git clone https://github.com/HansKristian-Work/dxil-spirv.git "$refs/dxil-spirv"
+}
+git -C "$refs/dxil-spirv" fetch --all
+git -C "$refs/dxil-spirv" checkout $buildCommit
+git -C "$refs/dxil-spirv" submodule update --init --recursive
+
+# spirv_cross binding template: pin to the commit matching the crate version
+# we mirror (or a known-good commit).
+if (-not (Test-Path "$refs/spirv_cross")) {
+    git clone https://github.com/grovesNL/spirv_cross.git "$refs/spirv_cross"
+}
+git -C "$refs/spirv_cross" submodule update --init --recursive
+```
+
+If a clone already exists, `fetch` and re-checkout the pinned commit; do not
+leave it on an arbitrary newer master.
+
 ### Step 1 — Index with codegraph
 
-Idempotent; run once per session:
+Idempotent; run once per session (after Step 0):
 
 ```powershell
 codegraph init <repo-root>
-codegraph init references/dxil-spirv
-codegraph init references/spirv_cross
+codegraph init "$refs/dxil-spirv"
+codegraph init "$refs/spirv_cross"
 ```
 
 Use `codegraph explore "<symbol>"` for cross-repo questions (e.g. "which
@@ -64,13 +108,13 @@ Use `codegraph explore "<symbol>"` for cross-repo questions (e.g. "which
 
 - Upstream dxil-spirv uses a rolling master with **no git tags**. The
   "released version" is the commit pinned in `dxil-spirv-sys/dxil-spirv`.
-- The upstream **C API is explicitly kept ABI/API stable** (see
-  `references/dxil-spirv/README.md`: "Only the C API is installed and is
-  expected to be kept ABI/API stable when it releases."). The version macros
+- The upstream **C API is explicitly kept ABI/API stable** (see the upstream
+  README: "Only the C API is installed and is expected to be kept ABI/API
+  stable when it releases."). The version macros
   `DXIL_SPV_API_VERSION_MAJOR/MINOR/PATCH` (currently `2.72.1`) in
   `dxil_spirv_c.h` are the authoritative compatibility signal.
 - To upgrade: checkout the new commit in `dxil-spirv-sys/dxil-spirv`, then
-  mirror the SAME commit into `references/dxil-spirv`.
+  mirror the SAME commit into the skill's reference clone (Step 0).
 
 ### Step 3 — Post-upgrade review checklist
 
@@ -191,8 +235,8 @@ library is missing or mis-ordered here.
 
 ## Hard rules
 
-- NEVER commit changes inside `references/`.
-- NEVER point the build at `references/`; only `dxil-spirv-sys/dxil-spirv`.
+- NEVER commit the skill's `references/` clones (they are git-ignored).
+- NEVER point the build at any reference clone; only `dxil-spirv-sys/dxil-spirv`.
 - Keep the public safe API backward-compatible within a minor version bump.
 - Do NOT skip the acceptance gate, and do NOT report completion on a red build.
 - Do NOT stop to ask the user for decisions the knowledge base or a reference
