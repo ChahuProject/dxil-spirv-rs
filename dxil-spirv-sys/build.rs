@@ -106,8 +106,14 @@ fn link_static(dst: &Path) {
     }
 }
 
-/// Recursively walk `dir` and register any directory containing `.lib` files
-/// as a native link search path.
+/// Recursively walk `dir` and register any directory containing static library
+/// files as a native link search path.
+///
+/// Static libraries use the platform's extension: `.lib` on Windows (MSVC),
+/// `.a` on Unix-likes (Linux, macOS). We must recognize BOTH, otherwise the
+/// recursive search never registers the per-target subdirectories that hold
+/// `libdxbc-spirv.a`, `libglslang-spirv-builder.a`, `libllvm-bc.a` and
+/// `libbc-decoder.a`, and the link fails with "unable to find library -l...".
 fn register_lib_dirs(dir: &Path) {
     if !dir.is_dir() {
         return;
@@ -118,7 +124,7 @@ fn register_lib_dirs(dir: &Path) {
             let path = entry.path();
             if path.is_dir() {
                 register_lib_dirs(&path);
-            } else if path.extension().is_some_and(|e| e == "lib") {
+            } else if path.extension().is_some_and(|e| e == "lib" || e == "a") {
                 has_lib = true;
             }
         }
