@@ -50,7 +50,10 @@ fn main() {
         None => match download_dxc(workspace_root) {
             Ok(path) => path,
             Err(e) => {
-                println!("cargo:warning=failed to download DXC {}: {}", DXC_VERSION, e);
+                println!(
+                    "cargo:warning=failed to download DXC {}: {}",
+                    DXC_VERSION, e
+                );
                 println!("cargo:warning=shader compilation will be incomplete");
                 return;
             }
@@ -203,10 +206,7 @@ fn is_dxc_compatible(path: &Path) -> bool {
 
 /// Download the official DXC release and cache it under target/dxc/.
 fn download_dxc(workspace_root: &Path) -> Result<PathBuf, String> {
-    let cache_dir = workspace_root
-        .join("target")
-        .join("dxc")
-        .join(DXC_VERSION);
+    let cache_dir = workspace_root.join("target").join("dxc").join(DXC_VERSION);
     let dxc_path = cache_dir.join("dxc.exe");
 
     if dxc_path.exists() {
@@ -271,8 +271,8 @@ fn download_dxc(workspace_root: &Path) -> Result<PathBuf, String> {
 /// Compile all HLSL shaders to DXIL using DXC
 fn compile_shaders(dxc: &Path, shaders_dir: &Path) {
     let shader_extensions = [
-        "vert", "frag", "comp", "geom", "tesc", "tese", "mesh", "task", "rgen", "rmiss", "rclosest",
-        "rany", "rint", "rcall",
+        "vert", "frag", "comp", "geom", "tesc", "tese", "mesh", "task", "rgen", "rmiss",
+        "rclosest", "rany", "rint", "rcall",
     ];
 
     for entry in walkdir(shaders_dir) {
@@ -349,7 +349,11 @@ fn compile_shaders(dxc: &Path, shaders_dir: &Path) {
                 }
             }
             Err(e) => {
-                println!("cargo:warning=Failed to run DXC for {}: {}", path.display(), e);
+                println!(
+                    "cargo:warning=Failed to run DXC for {}: {}",
+                    path.display(),
+                    e
+                );
             }
         }
     }
@@ -421,9 +425,7 @@ fn generate_manifest(shaders_dir: &Path, output_dir: &Path) {
         let has_dxil = path.with_extension("dxil").exists();
 
         // Check if reference exists
-        let ref_path = output_dir
-            .join("tests/reference/shaders")
-            .join(rel_path);
+        let ref_path = output_dir.join("tests/reference/shaders").join(rel_path);
         let has_reference = ref_path.exists();
 
         shaders.push(format!(

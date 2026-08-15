@@ -53,8 +53,15 @@ fn build_with_cmake(upstream: &Path) -> PathBuf {
         )
         .profile(build_type)
         // Only build what we need: the static C API target.
-        .build_target("dxil-spirv-c-static")
-        .cxxflag("/EHsc"); // MSVC: enable C++ exceptions (dxil-spirv needs them)
+        .build_target("dxil-spirv-c-static");
+
+    // MSVC: enable C++ exceptions (dxil-spirv needs them). This is an
+    // MSVC-only flag — passing it to GCC/Clang breaks the CMake compiler
+    // check with "no such file or directory: '/EHsc'". GCC/Clang enable C++
+    // exceptions by default for .cpp files, so no flag is needed there.
+    if env::var("CARGO_CFG_TARGET_ENV").as_deref() == Ok("msvc") {
+        cfg.cxxflag("/EHsc");
+    }
 
     cfg.build()
 }

@@ -1,6 +1,6 @@
 //! RAII wrapper around `dxil_spv_parsed_blob`.
 
-use crate::error::{check, Error, Result};
+use crate::error::{Error, Result, check};
 use crate::stage::ShaderStage;
 use dxil_spirv_sys as sys;
 use std::ffi::{CStr, CString};
@@ -176,22 +176,39 @@ impl ParsedBlob {
         mut uav: U,
     ) -> Result<()>
     where
-        S: FnMut(&crate::binding::D3dBinding) -> Option<crate::binding::SrvVulkanBinding> + Send + 'static,
-        M: FnMut(&crate::binding::D3dBinding) -> Option<crate::binding::VulkanBinding> + Send + 'static,
-        C: FnMut(&crate::binding::D3dBinding) -> Option<crate::binding::CbvVulkanBinding> + Send + 'static,
-        U: FnMut(&crate::binding::UavD3dBinding) -> Option<crate::binding::UavVulkanBinding> + Send + 'static,
+        S: FnMut(&crate::binding::D3dBinding) -> Option<crate::binding::SrvVulkanBinding>
+            + Send
+            + 'static,
+        M: FnMut(&crate::binding::D3dBinding) -> Option<crate::binding::VulkanBinding>
+            + Send
+            + 'static,
+        C: FnMut(&crate::binding::D3dBinding) -> Option<crate::binding::CbvVulkanBinding>
+            + Send
+            + 'static,
+        U: FnMut(&crate::binding::UavD3dBinding) -> Option<crate::binding::UavVulkanBinding>
+            + Send
+            + 'static,
     {
         // We reuse the same double-boxing trampoline pattern as the
         // converter remappers, but with a simpler scope: the callbacks are
         // only alive for the duration of this call.
-        use crate::remapper::{
-            CbvRemapper, SamplerRemapper, SrvRemapper, UavRemapper,
-        };
+        use crate::remapper::{CbvRemapper, SamplerRemapper, SrvRemapper, UavRemapper};
 
-        type SrvBox = Box<dyn FnMut(&crate::binding::D3dBinding) -> Option<crate::binding::SrvVulkanBinding> + Send>;
-        type SamplerBox = Box<dyn FnMut(&crate::binding::D3dBinding) -> Option<crate::binding::VulkanBinding> + Send>;
-        type CbvBox = Box<dyn FnMut(&crate::binding::D3dBinding) -> Option<crate::binding::CbvVulkanBinding> + Send>;
-        type UavBox = Box<dyn FnMut(&crate::binding::UavD3dBinding) -> Option<crate::binding::UavVulkanBinding> + Send>;
+        type SrvBox = Box<
+            dyn FnMut(&crate::binding::D3dBinding) -> Option<crate::binding::SrvVulkanBinding>
+                + Send,
+        >;
+        type SamplerBox = Box<
+            dyn FnMut(&crate::binding::D3dBinding) -> Option<crate::binding::VulkanBinding> + Send,
+        >;
+        type CbvBox = Box<
+            dyn FnMut(&crate::binding::D3dBinding) -> Option<crate::binding::CbvVulkanBinding>
+                + Send,
+        >;
+        type UavBox = Box<
+            dyn FnMut(&crate::binding::UavD3dBinding) -> Option<crate::binding::UavVulkanBinding>
+                + Send,
+        >;
 
         let srv_boxed: SrvBox = Box::new(move |b| srv(b));
         let sampler_boxed: SamplerBox = Box::new(move |b| sampler(b));

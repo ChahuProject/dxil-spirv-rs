@@ -7,7 +7,7 @@
 //! the enum into the matching raw struct and forwards it.
 
 use dxil_spirv_sys as sys;
-use std::ffi::{c_uint, CString};
+use std::ffi::{CString, c_uint};
 
 /// All converter options supported by this version of dxil-spirv.
 ///
@@ -1293,11 +1293,7 @@ impl RawOptionData {
 }
 
 fn bool_to_dxil(b: bool) -> sys::dxil_spv_bool {
-    if b {
-        1
-    } else {
-        0
-    }
+    if b { 1 } else { 0 }
 }
 
 #[cfg(test)]

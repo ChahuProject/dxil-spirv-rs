@@ -7,7 +7,8 @@ use std::ffi::CStr;
 
 /// The kind of a D3D shader resource (texture, buffer, sampler, …).
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub enum ResourceKind {    /// Invalid / unknown.
+pub enum ResourceKind {
+    /// Invalid / unknown.
     Invalid,
     /// 1D texture.
     Texture1D,
@@ -468,9 +469,7 @@ impl From<ResourceClass> for sys::dxil_spv_resource_class {
             ResourceClass::Srv => sys::dxil_spv_resource_class_DXIL_SPV_RESOURCE_CLASS_SRV,
             ResourceClass::Uav => sys::dxil_spv_resource_class_DXIL_SPV_RESOURCE_CLASS_UAV,
             ResourceClass::Cbv => sys::dxil_spv_resource_class_DXIL_SPV_RESOURCE_CLASS_CBV,
-            ResourceClass::Sampler => {
-                sys::dxil_spv_resource_class_DXIL_SPV_RESOURCE_CLASS_SAMPLER
-            }
+            ResourceClass::Sampler => sys::dxil_spv_resource_class_DXIL_SPV_RESOURCE_CLASS_SAMPLER,
         }
     }
 }

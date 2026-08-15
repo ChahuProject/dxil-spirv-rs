@@ -119,10 +119,12 @@ fn read_rs_files_recursive(dir: &Path, out: &mut String) {
 fn source_references_symbol(source: &str, symbol: &str) -> bool {
     for (i, _) in source.match_indices(symbol) {
         let before_ok = i == 0
-            || !source.as_bytes()[i - 1].is_ascii_alphanumeric() && source.as_bytes()[i - 1] != b'_';
+            || !source.as_bytes()[i - 1].is_ascii_alphanumeric()
+                && source.as_bytes()[i - 1] != b'_';
         let after = i + symbol.len();
         let after_ok = after >= source.len()
-            || !source.as_bytes()[after].is_ascii_alphanumeric() && source.as_bytes()[after] != b'_';
+            || !source.as_bytes()[after].is_ascii_alphanumeric()
+                && source.as_bytes()[after] != b'_';
         if before_ok && after_ok {
             return true;
         }

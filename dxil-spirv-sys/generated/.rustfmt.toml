@@ -1,0 +1,6 @@
+# Intentionally empty.
+#
+# This directory contains bindgen-generated bindings. An empty .rustfmt.toml
+# (leading dot, see rust-lang/rustfmt#4264) stops rustfmt from descending into
+# this tree when run from the workspace root, so the generated file is never
+# reformatted. Do not add settings here.

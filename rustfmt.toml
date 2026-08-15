@@ -1,0 +1,12 @@
+# rustfmt configuration for dxil-spirv-rs (edition 2024).
+#
+# This is the single source of truth for formatting. It applies to all
+# first-party crates (dxil-spirv, dxil-spirv-sys, dxil-spirv-tests).
+#
+# To EXEMPT a vendored / generated directory tree from formatting, drop an
+# EMPTY file named `.rustfmt.toml` into that directory (note the leading dot
+# and see https://github.com/rust-lang/rustfmt/issues/4264). This repo ships:
+#   dxil-spirv-sys/generated/.rustfmt.toml   (bindgen output)
+#   dxil-spirv-sys/dxil-spirv/.rustfmt.toml  (vendored upstream C++)
+
+edition = "2024"

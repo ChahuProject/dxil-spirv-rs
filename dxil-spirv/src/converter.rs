@@ -1,6 +1,6 @@
 //! RAII wrapper around `dxil_spv_converter`.
 
-use crate::error::{check, Error, Result};
+use crate::error::{Error, Result, check};
 use crate::options::ConverterOption;
 use crate::parsed_blob::ParsedBlob;
 use crate::remapper::{
@@ -563,9 +563,8 @@ impl Converter {
     /// Must be called after [`Converter::run`].
     pub fn is_multiview_compatible(&self) -> Result<bool> {
         let mut result = 0u8;
-        let res = unsafe {
-            sys::dxil_spv_converter_is_multiview_compatible(self.handle, &mut result)
-        };
+        let res =
+            unsafe { sys::dxil_spv_converter_is_multiview_compatible(self.handle, &mut result) };
         check(res)?;
         Ok(result != 0)
     }

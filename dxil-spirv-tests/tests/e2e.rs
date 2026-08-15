@@ -8,7 +8,7 @@
 
 mod harness;
 
-use harness::{discover_tested_shaders, discover_upstream_shaders, test_shader, TestStatus};
+use harness::{TestStatus, discover_tested_shaders, discover_upstream_shaders, test_shader};
 
 /// Placeholder test that child processes match against.
 ///
@@ -75,7 +75,10 @@ fn test_completeness_check() {
         );
     }
 
-    println!("Completeness check passed: {} shaders covered", upstream.len());
+    println!(
+        "Completeness check passed: {} shaders covered",
+        upstream.len()
+    );
 }
 
 /// Smoke test: verify a few known shaders work
@@ -98,7 +101,11 @@ fn test_smoke() {
             shader,
             result.error
         );
-        println!("PASS: {} ({} SPIR-V words)", shader, result.spirv_len.unwrap());
+        println!(
+            "PASS: {} ({} SPIR-V words)",
+            shader,
+            result.spirv_len.unwrap()
+        );
     }
 }
 
@@ -265,17 +272,45 @@ fn test_metrics_report() {
     }
 
     let total = results.len();
-    let passed = results.iter().filter(|r| r.status == TestStatus::Pass).count();
-    let failed = results.iter().filter(|r| r.status == TestStatus::Fail).count();
-    let known = results.iter().filter(|r| r.status == TestStatus::KnownFailure).count();
-    let skipped = results.iter().filter(|r| r.status == TestStatus::Skip).count();
+    let passed = results
+        .iter()
+        .filter(|r| r.status == TestStatus::Pass)
+        .count();
+    let failed = results
+        .iter()
+        .filter(|r| r.status == TestStatus::Fail)
+        .count();
+    let known = results
+        .iter()
+        .filter(|r| r.status == TestStatus::KnownFailure)
+        .count();
+    let skipped = results
+        .iter()
+        .filter(|r| r.status == TestStatus::Skip)
+        .count();
 
     println!("\n=== Test Metrics ===");
     println!("Total shaders: {}", total);
-    println!("Passed: {} ({:.1}%)", passed, 100.0 * passed as f64 / total as f64);
-    println!("Failed: {} ({:.1}%)", failed, 100.0 * failed as f64 / total as f64);
-    println!("Known failures: {} ({:.1}%)", known, 100.0 * known as f64 / total as f64);
-    println!("Skipped: {} ({:.1}%)", skipped, 100.0 * skipped as f64 / total as f64);
+    println!(
+        "Passed: {} ({:.1}%)",
+        passed,
+        100.0 * passed as f64 / total as f64
+    );
+    println!(
+        "Failed: {} ({:.1}%)",
+        failed,
+        100.0 * failed as f64 / total as f64
+    );
+    println!(
+        "Known failures: {} ({:.1}%)",
+        known,
+        100.0 * known as f64 / total as f64
+    );
+    println!(
+        "Skipped: {} ({:.1}%)",
+        skipped,
+        100.0 * skipped as f64 / total as f64
+    );
 
     // Hard thresholds
     if failed > 0 {
@@ -290,7 +325,11 @@ fn test_metrics_report() {
             failures.join("\n")
         );
     }
-    assert!(skipped == 0, "Skipped shaders detected (missing DXIL?): {}", skipped);
+    assert!(
+        skipped == 0,
+        "Skipped shaders detected (missing DXIL?): {}",
+        skipped
+    );
 
     // Known failure rate should not exceed 20% (currently ~24% due to
     // remapper limitations, tracked for future improvement).
@@ -365,16 +404,16 @@ fn check_regression_baseline(results: &[harness::ShaderTestResult]) {
         match baseline.get(path) {
             Some(baseline_status) => {
                 if baseline_status == "pass" && current_status != "pass" {
-                    regressions.push(format!(
-                        "  - {}: was pass, now {}",
-                        path, current_status
-                    ));
+                    regressions.push(format!("  - {}: was pass, now {}", path, current_status));
                 } else if baseline_status != "pass" && current_status == "pass" {
                     fixes.push(format!("  - {}: was {}, now pass", path, baseline_status));
                 }
             }
             None => {
-                new_shaders.push(format!("  - {}: new shader, status={}", path, current_status));
+                new_shaders.push(format!(
+                    "  - {}: new shader, status={}",
+                    path, current_status
+                ));
             }
         }
     }

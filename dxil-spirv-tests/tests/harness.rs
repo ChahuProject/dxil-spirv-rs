@@ -8,9 +8,9 @@ use std::fs;
 use std::path::{Path, PathBuf};
 
 use dxil_spirv::binding::{
-    Bindless, CbvVulkanBinding, ResourceClass, ResourceKind,
-    SrvVulkanBinding, UavVulkanBinding, VulkanBinding, VulkanDescriptorType,
-    VulkanShaderStageIo, VulkanShaderStageIoFlags, VulkanStreamOutput, VulkanVertexInput,
+    Bindless, CbvVulkanBinding, ResourceClass, ResourceKind, SrvVulkanBinding, UavVulkanBinding,
+    VulkanBinding, VulkanDescriptorType, VulkanShaderStageIo, VulkanShaderStageIoFlags,
+    VulkanStreamOutput, VulkanVertexInput,
 };
 use dxil_spirv::options::{ConverterOption, InstructionInstrumentationType};
 use dxil_spirv::{Converter, ParsedBlob};
@@ -27,8 +27,20 @@ pub fn discover_upstream_shaders() -> HashSet<String> {
             // Only shader source files, not .dxil, .h, .inc
             if matches!(
                 ext,
-                "vert" | "frag" | "comp" | "geom" | "tesc" | "tese" | "mesh" | "task" | "rgen"
-                    | "rmiss" | "rclosest" | "rany" | "rint" | "rcall"
+                "vert"
+                    | "frag"
+                    | "comp"
+                    | "geom"
+                    | "tesc"
+                    | "tese"
+                    | "mesh"
+                    | "task"
+                    | "rgen"
+                    | "rmiss"
+                    | "rclosest"
+                    | "rany"
+                    | "rint"
+                    | "rcall"
             ) {
                 let rel = entry.strip_prefix(&shaders_dir).unwrap();
                 shaders.insert(rel.to_string_lossy().replace('\\', "/"));
@@ -49,8 +61,20 @@ pub fn discover_tested_shaders() -> HashSet<String> {
         if let Some(ext) = entry.extension().and_then(|e| e.to_str()) {
             if matches!(
                 ext,
-                "vert" | "frag" | "comp" | "geom" | "tesc" | "tese" | "mesh" | "task" | "rgen"
-                    | "rmiss" | "rclosest" | "rany" | "rint" | "rcall"
+                "vert"
+                    | "frag"
+                    | "comp"
+                    | "geom"
+                    | "tesc"
+                    | "tese"
+                    | "mesh"
+                    | "task"
+                    | "rgen"
+                    | "rmiss"
+                    | "rclosest"
+                    | "rany"
+                    | "rint"
+                    | "rcall"
             ) {
                 let rel = entry.strip_prefix(&test_shaders).unwrap();
                 shaders.insert(rel.to_string_lossy().replace('\\', "/"));
@@ -136,7 +160,7 @@ pub fn test_shader_in_process(shader_path: &str) -> ShaderTestResult {
                 spirv_len: None,
                 error: Some(format!("Failed to read DXIL: {}", e)),
                 glsl_md5: None,
-            }
+            };
         }
     };
 
@@ -155,7 +179,7 @@ pub fn test_shader_in_process(shader_path: &str) -> ShaderTestResult {
                     spirv_len: None,
                     error: Some(format!("Parse (raw DXIL) failed: {}", e)),
                     glsl_md5: None,
-                }
+                };
             }
         }
     } else {
@@ -168,7 +192,7 @@ pub fn test_shader_in_process(shader_path: &str) -> ShaderTestResult {
                     spirv_len: None,
                     error: Some(format!("Parse failed: {}", e)),
                     glsl_md5: None,
-                }
+                };
             }
         }
     };
@@ -182,7 +206,7 @@ pub fn test_shader_in_process(shader_path: &str) -> ShaderTestResult {
                 spirv_len: None,
                 error: Some(format!("Converter creation failed: {}", e)),
                 glsl_md5: None,
-            }
+            };
         }
     };
 
@@ -224,7 +248,7 @@ pub fn test_shader_in_process(shader_path: &str) -> ShaderTestResult {
                 spirv_len: None,
                 error: Some(format!("Get SPIR-V failed: {}", e)),
                 glsl_md5: None,
-            }
+            };
         }
     };
 
@@ -328,7 +352,11 @@ fn configure_converter(converter: &mut Converter, shader_path: &str) -> dxil_spi
     // Also adds 64 dummy root-parameter mappings and enables BDA.
     if name.contains(".bindless.") {
         let base_words = 8;
-        let extra_words = if name.contains(".descriptor-qa.") { 4 } else { 0 };
+        let extra_words = if name.contains(".descriptor-qa.") {
+            4
+        } else {
+            0
+        };
         converter.set_root_constant_word_count(base_words + extra_words);
         for i in 0..64u32 {
             converter.add_root_parameter_mapping(i, 4 * i);
@@ -1162,8 +1190,8 @@ pub fn requires_complex_remapper(shader_path: &str) -> Option<&'static str> {
 /// reference. Used in non-strict mode to verify the SPIR-V is valid enough
 /// for SPIRV-Cross to consume.
 fn compile_glsl_only(spirv: &[u32]) -> Result<String, String> {
-    use spirv_cross2::compile::glsl::GlslVersion;
     use spirv_cross2::compile::CompilableTarget;
+    use spirv_cross2::compile::glsl::GlslVersion;
     use spirv_cross2::targets::Glsl;
     use spirv_cross2::{Compiler, Module};
 
@@ -1189,8 +1217,8 @@ fn compile_glsl_only(spirv: &[u32]) -> Result<String, String> {
 ///
 /// Returns the MD5 hex string on match, or an error describing the mismatch.
 fn compile_glsl_and_compare(spirv: &[u32], shader_path: &str) -> Result<String, String> {
-    use spirv_cross2::compile::glsl::GlslVersion;
     use spirv_cross2::compile::CompilableTarget;
+    use spirv_cross2::compile::glsl::GlslVersion;
     use spirv_cross2::targets::Glsl;
     use spirv_cross2::{Compiler, Module};
 
@@ -1222,10 +1250,7 @@ fn compile_glsl_and_compare(spirv: &[u32], shader_path: &str) -> Result<String, 
         .join(shader_path);
 
     if !reference_path.exists() {
-        return Err(format!(
-            "reference not found: {}",
-            reference_path.display()
-        ));
+        return Err(format!("reference not found: {}", reference_path.display()));
     }
 
     let reference_content = fs::read_to_string(&reference_path)
