@@ -45,9 +45,7 @@ macro_rules! define_remapper {
             /// The holder retains ownership of the closure; `userdata` points
             /// at the (stable) outer box. Store the returned holder in the
             /// converter before registering the callback.
-            pub(crate) fn register(
-                closure: Box<$closure>,
-            ) -> (Self, $cb_ty, *mut c_void) {
+            pub(crate) fn register(closure: Box<$closure>) -> (Self, $cb_ty, *mut c_void) {
                 let mut holder = Self {
                     closure: Box::new(closure),
                 };

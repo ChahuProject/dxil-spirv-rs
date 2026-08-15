@@ -56,19 +56,37 @@ impl From<sys::dxil_spv_resource_kind> for ResourceKind {
             sys::dxil_spv_resource_kind_DXIL_SPV_RESOURCE_KIND_TEXTURE_2DMS => Self::Texture2DMs,
             sys::dxil_spv_resource_kind_DXIL_SPV_RESOURCE_KIND_TEXTURE_3D => Self::Texture3D,
             sys::dxil_spv_resource_kind_DXIL_SPV_RESOURCE_KIND_TEXTURE_CUBE => Self::TextureCube,
-            sys::dxil_spv_resource_kind_DXIL_SPV_RESOURCE_KIND_TEXTURE_1D_ARRAY => Self::Texture1DArray,
-            sys::dxil_spv_resource_kind_DXIL_SPV_RESOURCE_KIND_TEXTURE_2D_ARRAY => Self::Texture2DArray,
-            sys::dxil_spv_resource_kind_DXIL_SPV_RESOURCE_KIND_TEXTURE_2D_MS_ARRAY => Self::Texture2DMsArray,
-            sys::dxil_spv_resource_kind_DXIL_SPV_RESOURCE_KIND_TEXTURE_CUBE_ARRAY => Self::TextureCubeArray,
+            sys::dxil_spv_resource_kind_DXIL_SPV_RESOURCE_KIND_TEXTURE_1D_ARRAY => {
+                Self::Texture1DArray
+            }
+            sys::dxil_spv_resource_kind_DXIL_SPV_RESOURCE_KIND_TEXTURE_2D_ARRAY => {
+                Self::Texture2DArray
+            }
+            sys::dxil_spv_resource_kind_DXIL_SPV_RESOURCE_KIND_TEXTURE_2D_MS_ARRAY => {
+                Self::Texture2DMsArray
+            }
+            sys::dxil_spv_resource_kind_DXIL_SPV_RESOURCE_KIND_TEXTURE_CUBE_ARRAY => {
+                Self::TextureCubeArray
+            }
             sys::dxil_spv_resource_kind_DXIL_SPV_RESOURCE_KIND_TYPED_BUFFER => Self::TypedBuffer,
             sys::dxil_spv_resource_kind_DXIL_SPV_RESOURCE_KIND_RAW_BUFFER => Self::RawBuffer,
-            sys::dxil_spv_resource_kind_DXIL_SPV_RESOURCE_KIND_STRUCTURED_BUFFER => Self::StructuredBuffer,
-            sys::dxil_spv_resource_kind_DXIL_SPV_RESOURCE_KIND_CONSTANT_BUFFER => Self::ConstantBuffer,
+            sys::dxil_spv_resource_kind_DXIL_SPV_RESOURCE_KIND_STRUCTURED_BUFFER => {
+                Self::StructuredBuffer
+            }
+            sys::dxil_spv_resource_kind_DXIL_SPV_RESOURCE_KIND_CONSTANT_BUFFER => {
+                Self::ConstantBuffer
+            }
             sys::dxil_spv_resource_kind_DXIL_SPV_RESOURCE_KIND_SAMPLER => Self::Sampler,
             sys::dxil_spv_resource_kind_DXIL_SPV_RESOURCE_KIND_TBUFFER => Self::TBuffer,
-            sys::dxil_spv_resource_kind_DXIL_SPV_RESOURCE_KIND_RT_ACCELERATION_STRUCTURE => Self::RtAccelerationStructure,
-            sys::dxil_spv_resource_kind_DXIL_SPV_RESOURCE_KIND_FEEDBACK_TEXTURE_2D => Self::FeedbackTexture2D,
-            sys::dxil_spv_resource_kind_DXIL_SPV_RESOURCE_KIND_FEEDBACK_TEXTURE_2D_ARRAY => Self::FeedbackTexture2DArray,
+            sys::dxil_spv_resource_kind_DXIL_SPV_RESOURCE_KIND_RT_ACCELERATION_STRUCTURE => {
+                Self::RtAccelerationStructure
+            }
+            sys::dxil_spv_resource_kind_DXIL_SPV_RESOURCE_KIND_FEEDBACK_TEXTURE_2D => {
+                Self::FeedbackTexture2D
+            }
+            sys::dxil_spv_resource_kind_DXIL_SPV_RESOURCE_KIND_FEEDBACK_TEXTURE_2D_ARRAY => {
+                Self::FeedbackTexture2DArray
+            }
             _ => Self::Invalid,
         }
     }
@@ -193,11 +211,7 @@ impl From<VulkanBinding> for sys::dxil_spv_vulkan_binding {
         raw.set = value.set;
         raw.binding = value.binding;
         raw.bindless.heap_root_offset = value.bindless.heap_root_offset;
-        raw.bindless.use_heap = if value.bindless.use_heap {
-            1
-        } else {
-            0
-        };
+        raw.bindless.use_heap = if value.bindless.use_heap { 1 } else { 0 };
         raw.descriptor_type = value.descriptor_type.into();
         raw.__bindgen_anon_1.root_constant_index = value.root_constant_index;
         raw
@@ -290,7 +304,9 @@ impl From<&sys::dxil_spv_d3d_vertex_input> for D3dVertexInput {
         let semantic = if raw.semantic.is_null() {
             String::new()
         } else {
-            unsafe { CStr::from_ptr(raw.semantic) }.to_string_lossy().into_owned()
+            unsafe { CStr::from_ptr(raw.semantic) }
+                .to_string_lossy()
+                .into_owned()
         };
         Self {
             semantic,
@@ -330,7 +346,9 @@ impl From<&sys::dxil_spv_d3d_stream_output> for D3dStreamOutput {
         let semantic = if raw.semantic.is_null() {
             String::new()
         } else {
-            unsafe { CStr::from_ptr(raw.semantic) }.to_string_lossy().into_owned()
+            unsafe { CStr::from_ptr(raw.semantic) }
+                .to_string_lossy()
+                .into_owned()
         };
         Self {
             semantic,
@@ -358,11 +376,7 @@ impl From<VulkanStreamOutput> for sys::dxil_spv_vulkan_stream_output {
             offset: value.offset,
             stride: value.stride,
             buffer_index: value.buffer_index,
-            enable: if value.enable {
-                1
-            } else {
-                0
-            },
+            enable: if value.enable { 1 } else { 0 },
         }
     }
 }
@@ -385,7 +399,9 @@ impl From<&sys::dxil_spv_d3d_shader_stage_io> for D3dShaderStageIo {
         let semantic = if raw.semantic.is_null() {
             String::new()
         } else {
-            unsafe { CStr::from_ptr(raw.semantic) }.to_string_lossy().into_owned()
+            unsafe { CStr::from_ptr(raw.semantic) }
+                .to_string_lossy()
+                .into_owned()
         };
         Self {
             semantic,
@@ -419,8 +435,12 @@ pub enum VulkanShaderStageIoFlags {
 impl From<VulkanShaderStageIo> for sys::dxil_spv_vulkan_shader_stage_io {
     fn from(value: VulkanShaderStageIo) -> Self {
         let flags = match value.flags {
-            VulkanShaderStageIoFlags::None => sys::dxil_spv_vulkan_shader_stage_io_flags_DXIL_SPV_SHADER_STAGE_IO_NONE,
-            VulkanShaderStageIoFlags::PerPrimitive => sys::dxil_spv_vulkan_shader_stage_io_flags_DXIL_SPV_SHADER_STAGE_IO_PER_PRIMITIVE,
+            VulkanShaderStageIoFlags::None => {
+                sys::dxil_spv_vulkan_shader_stage_io_flags_DXIL_SPV_SHADER_STAGE_IO_NONE
+            }
+            VulkanShaderStageIoFlags::PerPrimitive => {
+                sys::dxil_spv_vulkan_shader_stage_io_flags_DXIL_SPV_SHADER_STAGE_IO_PER_PRIMITIVE
+            }
         };
         Self {
             location: value.location,

@@ -37,13 +37,20 @@ fn build_with_cmake(upstream: &Path) -> PathBuf {
     // Rust side: debug Rust links MSVCRTD, release Rust links MSVCRT. Mixing
     // them produces unresolved `_CrtDbgReport` / `_calloc_dbg` symbols.
     let profile = env::var("PROFILE").unwrap_or_else(|_| "release".to_string());
-    let build_type = if profile == "debug" { "Debug" } else { "Release" };
+    let build_type = if profile == "debug" {
+        "Debug"
+    } else {
+        "Release"
+    };
 
     cfg.define("DXIL_SPIRV_CLI", "OFF")
         .define("DXIL_SPIRV_NATIVE_LLVM", "OFF")
         .define("CMAKE_BUILD_TYPE", build_type)
         // Use the dynamic CRT (/MD or /MDd) to match Rust's default linkage.
-        .define("CMAKE_MSVC_RUNTIME_LIBRARY", "MultiThreaded$<$<CONFIG:Debug>:Debug>DLL")
+        .define(
+            "CMAKE_MSVC_RUNTIME_LIBRARY",
+            "MultiThreaded$<$<CONFIG:Debug>:Debug>DLL",
+        )
         .profile(build_type)
         // Only build what we need: the static C API target.
         .build_target("dxil-spirv-c-static")

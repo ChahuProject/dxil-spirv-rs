@@ -504,57 +504,133 @@ impl ConverterOption {
     /// The `dxil_spv_option` tag for this option.
     pub fn kind(&self) -> sys::dxil_spv_option {
         match self {
-            Self::ShaderDemoteToHelper { .. } => sys::dxil_spv_option_DXIL_SPV_OPTION_SHADER_DEMOTE_TO_HELPER,
-            Self::DualSourceBlending { .. } => sys::dxil_spv_option_DXIL_SPV_OPTION_DUAL_SOURCE_BLENDING,
+            Self::ShaderDemoteToHelper { .. } => {
+                sys::dxil_spv_option_DXIL_SPV_OPTION_SHADER_DEMOTE_TO_HELPER
+            }
+            Self::DualSourceBlending { .. } => {
+                sys::dxil_spv_option_DXIL_SPV_OPTION_DUAL_SOURCE_BLENDING
+            }
             Self::OutputSwizzle { .. } => sys::dxil_spv_option_DXIL_SPV_OPTION_OUTPUT_SWIZZLE,
-            Self::RasterizerSampleCount { .. } => sys::dxil_spv_option_DXIL_SPV_OPTION_RASTERIZER_SAMPLE_COUNT,
-            Self::RootConstantInlineUniformBlock { .. } => sys::dxil_spv_option_DXIL_SPV_OPTION_ROOT_CONSTANT_INLINE_UNIFORM_BLOCK,
-            Self::BindlessCbvSsboEmulation { .. } => sys::dxil_spv_option_DXIL_SPV_OPTION_BINDLESS_CBV_SSBO_EMULATION,
-            Self::PhysicalStorageBuffer { .. } => sys::dxil_spv_option_DXIL_SPV_OPTION_PHYSICAL_STORAGE_BUFFER,
-            Self::SbtDescriptorSizeLog2 { .. } => sys::dxil_spv_option_DXIL_SPV_OPTION_SBT_DESCRIPTOR_SIZE_LOG2,
+            Self::RasterizerSampleCount { .. } => {
+                sys::dxil_spv_option_DXIL_SPV_OPTION_RASTERIZER_SAMPLE_COUNT
+            }
+            Self::RootConstantInlineUniformBlock { .. } => {
+                sys::dxil_spv_option_DXIL_SPV_OPTION_ROOT_CONSTANT_INLINE_UNIFORM_BLOCK
+            }
+            Self::BindlessCbvSsboEmulation { .. } => {
+                sys::dxil_spv_option_DXIL_SPV_OPTION_BINDLESS_CBV_SSBO_EMULATION
+            }
+            Self::PhysicalStorageBuffer { .. } => {
+                sys::dxil_spv_option_DXIL_SPV_OPTION_PHYSICAL_STORAGE_BUFFER
+            }
+            Self::SbtDescriptorSizeLog2 { .. } => {
+                sys::dxil_spv_option_DXIL_SPV_OPTION_SBT_DESCRIPTOR_SIZE_LOG2
+            }
             Self::SsboAlignment { .. } => sys::dxil_spv_option_DXIL_SPV_OPTION_SSBO_ALIGNMENT,
-            Self::TypedUavReadWithoutFormat { .. } => sys::dxil_spv_option_DXIL_SPV_OPTION_TYPED_UAV_READ_WITHOUT_FORMAT,
-            Self::ShaderSourceFile { .. } => sys::dxil_spv_option_DXIL_SPV_OPTION_SHADER_SOURCE_FILE,
-            Self::BindlessTypedBufferOffsets { .. } => sys::dxil_spv_option_DXIL_SPV_OPTION_BINDLESS_TYPED_BUFFER_OFFSETS,
-            Self::BindlessOffsetBufferLayout { .. } => sys::dxil_spv_option_DXIL_SPV_OPTION_BINDLESS_OFFSET_BUFFER_LAYOUT,
-            Self::StorageInputOutput16Bit { .. } => sys::dxil_spv_option_DXIL_SPV_OPTION_STORAGE_INPUT_OUTPUT_16BIT,
+            Self::TypedUavReadWithoutFormat { .. } => {
+                sys::dxil_spv_option_DXIL_SPV_OPTION_TYPED_UAV_READ_WITHOUT_FORMAT
+            }
+            Self::ShaderSourceFile { .. } => {
+                sys::dxil_spv_option_DXIL_SPV_OPTION_SHADER_SOURCE_FILE
+            }
+            Self::BindlessTypedBufferOffsets { .. } => {
+                sys::dxil_spv_option_DXIL_SPV_OPTION_BINDLESS_TYPED_BUFFER_OFFSETS
+            }
+            Self::BindlessOffsetBufferLayout { .. } => {
+                sys::dxil_spv_option_DXIL_SPV_OPTION_BINDLESS_OFFSET_BUFFER_LAYOUT
+            }
+            Self::StorageInputOutput16Bit { .. } => {
+                sys::dxil_spv_option_DXIL_SPV_OPTION_STORAGE_INPUT_OUTPUT_16BIT
+            }
             Self::DescriptorQa { .. } => sys::dxil_spv_option_DXIL_SPV_OPTION_DESCRIPTOR_QA,
-            Self::MinPrecisionNative16Bit { .. } => sys::dxil_spv_option_DXIL_SPV_OPTION_MIN_PRECISION_NATIVE_16BIT,
+            Self::MinPrecisionNative16Bit { .. } => {
+                sys::dxil_spv_option_DXIL_SPV_OPTION_MIN_PRECISION_NATIVE_16BIT
+            }
             Self::ShaderI8Dot { .. } => sys::dxil_spv_option_DXIL_SPV_OPTION_SHADER_I8_DOT,
-            Self::ShaderRayTracingPrimitiveCulling { .. } => sys::dxil_spv_option_DXIL_SPV_OPTION_SHADER_RAY_TRACING_PRIMITIVE_CULLING,
-            Self::InvariantPosition { .. } => sys::dxil_spv_option_DXIL_SPV_OPTION_INVARIANT_POSITION,
-            Self::ScalarBlockLayout { .. } => sys::dxil_spv_option_DXIL_SPV_OPTION_SCALAR_BLOCK_LAYOUT,
+            Self::ShaderRayTracingPrimitiveCulling { .. } => {
+                sys::dxil_spv_option_DXIL_SPV_OPTION_SHADER_RAY_TRACING_PRIMITIVE_CULLING
+            }
+            Self::InvariantPosition { .. } => {
+                sys::dxil_spv_option_DXIL_SPV_OPTION_INVARIANT_POSITION
+            }
+            Self::ScalarBlockLayout { .. } => {
+                sys::dxil_spv_option_DXIL_SPV_OPTION_SCALAR_BLOCK_LAYOUT
+            }
             Self::BarycentricKhr { .. } => sys::dxil_spv_option_DXIL_SPV_OPTION_BARYCENTRIC_KHR,
-            Self::RobustPhysicalCbvLoad { .. } => sys::dxil_spv_option_DXIL_SPV_OPTION_ROBUST_PHYSICAL_CBV_LOAD,
-            Self::ArithmeticRelaxedPrecision { .. } => sys::dxil_spv_option_DXIL_SPV_OPTION_ARITHMETIC_RELAXED_PRECISION,
-            Self::PhysicalAddressDescriptorIndexing { .. } => sys::dxil_spv_option_DXIL_SPV_OPTION_PHYSICAL_ADDRESS_DESCRIPTOR_INDEXING,
-            Self::ForceSubgroupSize { .. } => sys::dxil_spv_option_DXIL_SPV_OPTION_FORCE_SUBGROUP_SIZE,
-            Self::DenormPreserveSupport { .. } => sys::dxil_spv_option_DXIL_SPV_OPTION_DENORM_PRESERVE_SUPPORT,
-            Self::StrictHelperLaneWaveOps { .. } => sys::dxil_spv_option_DXIL_SPV_OPTION_STRICT_HELPER_LANE_WAVE_OPS,
-            Self::SubgroupPartitionedNv { .. } => sys::dxil_spv_option_DXIL_SPV_OPTION_SUBGROUP_PARTITIONED_NV,
-            Self::DeadCodeEliminate { .. } => sys::dxil_spv_option_DXIL_SPV_OPTION_DEAD_CODE_ELIMINATE,
+            Self::RobustPhysicalCbvLoad { .. } => {
+                sys::dxil_spv_option_DXIL_SPV_OPTION_ROBUST_PHYSICAL_CBV_LOAD
+            }
+            Self::ArithmeticRelaxedPrecision { .. } => {
+                sys::dxil_spv_option_DXIL_SPV_OPTION_ARITHMETIC_RELAXED_PRECISION
+            }
+            Self::PhysicalAddressDescriptorIndexing { .. } => {
+                sys::dxil_spv_option_DXIL_SPV_OPTION_PHYSICAL_ADDRESS_DESCRIPTOR_INDEXING
+            }
+            Self::ForceSubgroupSize { .. } => {
+                sys::dxil_spv_option_DXIL_SPV_OPTION_FORCE_SUBGROUP_SIZE
+            }
+            Self::DenormPreserveSupport { .. } => {
+                sys::dxil_spv_option_DXIL_SPV_OPTION_DENORM_PRESERVE_SUPPORT
+            }
+            Self::StrictHelperLaneWaveOps { .. } => {
+                sys::dxil_spv_option_DXIL_SPV_OPTION_STRICT_HELPER_LANE_WAVE_OPS
+            }
+            Self::SubgroupPartitionedNv { .. } => {
+                sys::dxil_spv_option_DXIL_SPV_OPTION_SUBGROUP_PARTITIONED_NV
+            }
+            Self::DeadCodeEliminate { .. } => {
+                sys::dxil_spv_option_DXIL_SPV_OPTION_DEAD_CODE_ELIMINATE
+            }
             Self::PreciseControl { .. } => sys::dxil_spv_option_DXIL_SPV_OPTION_PRECISE_CONTROL,
-            Self::SampleGradOptimizationControl { .. } => sys::dxil_spv_option_DXIL_SPV_OPTION_SAMPLE_GRAD_OPTIMIZATION_CONTROL,
+            Self::SampleGradOptimizationControl { .. } => {
+                sys::dxil_spv_option_DXIL_SPV_OPTION_SAMPLE_GRAD_OPTIMIZATION_CONTROL
+            }
             Self::OpacityMicromap { .. } => sys::dxil_spv_option_DXIL_SPV_OPTION_OPACITY_MICROMAP,
             Self::BranchControl { .. } => sys::dxil_spv_option_DXIL_SPV_OPTION_BRANCH_CONTROL,
-            Self::SubgroupProperties { .. } => sys::dxil_spv_option_DXIL_SPV_OPTION_SUBGROUP_PROPERTIES,
-            Self::DescriptorHeapRobustness { .. } => sys::dxil_spv_option_DXIL_SPV_OPTION_DESCRIPTOR_HEAP_ROBUSTNESS,
-            Self::ComputeShaderDerivativesNv { .. } => sys::dxil_spv_option_DXIL_SPV_OPTION_COMPUTE_SHADER_DERIVATIVES_NV,
-            Self::QuadControlReconvergence { .. } => sys::dxil_spv_option_DXIL_SPV_OPTION_QUAD_CONTROL_RECONVERGENCE,
-            Self::RawAccessChainsNv { .. } => sys::dxil_spv_option_DXIL_SPV_OPTION_RAW_ACCESS_CHAINS_NV,
+            Self::SubgroupProperties { .. } => {
+                sys::dxil_spv_option_DXIL_SPV_OPTION_SUBGROUP_PROPERTIES
+            }
+            Self::DescriptorHeapRobustness { .. } => {
+                sys::dxil_spv_option_DXIL_SPV_OPTION_DESCRIPTOR_HEAP_ROBUSTNESS
+            }
+            Self::ComputeShaderDerivativesNv { .. } => {
+                sys::dxil_spv_option_DXIL_SPV_OPTION_COMPUTE_SHADER_DERIVATIVES_NV
+            }
+            Self::QuadControlReconvergence { .. } => {
+                sys::dxil_spv_option_DXIL_SPV_OPTION_QUAD_CONTROL_RECONVERGENCE
+            }
+            Self::RawAccessChainsNv { .. } => {
+                sys::dxil_spv_option_DXIL_SPV_OPTION_RAW_ACCESS_CHAINS_NV
+            }
             Self::DriverVersion { .. } => sys::dxil_spv_option_DXIL_SPV_OPTION_DRIVER_VERSION,
-            Self::ComputeShaderDerivatives { .. } => sys::dxil_spv_option_DXIL_SPV_OPTION_COMPUTE_SHADER_DERIVATIVES,
-            Self::InstructionInstrumentation { .. } => sys::dxil_spv_option_DXIL_SPV_OPTION_INSTRUCTION_INSTRUMENTATION,
+            Self::ComputeShaderDerivatives { .. } => {
+                sys::dxil_spv_option_DXIL_SPV_OPTION_COMPUTE_SHADER_DERIVATIVES
+            }
+            Self::InstructionInstrumentation { .. } => {
+                sys::dxil_spv_option_DXIL_SPV_OPTION_INSTRUCTION_INSTRUMENTATION
+            }
             Self::ShaderQuirk { .. } => sys::dxil_spv_option_DXIL_SPV_OPTION_SHADER_QUIRK,
-            Self::ExtendedRobustness { .. } => sys::dxil_spv_option_DXIL_SPV_OPTION_EXTENDED_ROBUSTNESS,
+            Self::ExtendedRobustness { .. } => {
+                sys::dxil_spv_option_DXIL_SPV_OPTION_EXTENDED_ROBUSTNESS
+            }
             Self::MaxTessFactor { .. } => sys::dxil_spv_option_DXIL_SPV_OPTION_MAX_TESS_FACTOR,
-            Self::VulkanMemoryModel { .. } => sys::dxil_spv_option_DXIL_SPV_OPTION_VULKAN_MEMORY_MODEL,
+            Self::VulkanMemoryModel { .. } => {
+                sys::dxil_spv_option_DXIL_SPV_OPTION_VULKAN_MEMORY_MODEL
+            }
             Self::Float8Support { .. } => sys::dxil_spv_option_DXIL_SPV_OPTION_FLOAT8_SUPPORT,
             Self::Nvapi { .. } => sys::dxil_spv_option_DXIL_SPV_OPTION_NVAPI,
-            Self::ExtendedNonSemantic { .. } => sys::dxil_spv_option_DXIL_SPV_OPTION_EXTENDED_NON_SEMANTIC,
-            Self::MixedFloatDotProduct { .. } => sys::dxil_spv_option_DXIL_SPV_OPTION_MIXED_FLOAT_DOT_PRODUCT,
-            Self::ComputeShaderDerivativesQuad { .. } => sys::dxil_spv_option_DXIL_SPV_OPTION_COMPUTE_SHADER_DERIVATIVES_QUAD,
-            Self::SsboAddressingBehavior { .. } => sys::dxil_spv_option_DXIL_SPV_OPTION_SSBO_ADDRESSING_BEHAVIOR,
+            Self::ExtendedNonSemantic { .. } => {
+                sys::dxil_spv_option_DXIL_SPV_OPTION_EXTENDED_NON_SEMANTIC
+            }
+            Self::MixedFloatDotProduct { .. } => {
+                sys::dxil_spv_option_DXIL_SPV_OPTION_MIXED_FLOAT_DOT_PRODUCT
+            }
+            Self::ComputeShaderDerivativesQuad { .. } => {
+                sys::dxil_spv_option_DXIL_SPV_OPTION_COMPUTE_SHADER_DERIVATIVES_QUAD
+            }
+            Self::SsboAddressingBehavior { .. } => {
+                sys::dxil_spv_option_DXIL_SPV_OPTION_SSBO_ADDRESSING_BEHAVIOR
+            }
             Self::FloatControls2 { .. } => sys::dxil_spv_option_DXIL_SPV_OPTION_FLOAT_CONTROLS_2,
         }
     }
@@ -593,9 +669,15 @@ impl ConverterOption {
                     swizzles: swizzles.as_ptr(),
                     swizzle_count: swizzles.len() as c_uint,
                 };
-                (raw.base, RawOptionData::OutputSwizzle(raw, swizzles.clone()))
+                (
+                    raw.base,
+                    RawOptionData::OutputSwizzle(raw, swizzles.clone()),
+                )
             }
-            Self::RasterizerSampleCount { sample_count, spec_constant } => {
+            Self::RasterizerSampleCount {
+                sample_count,
+                spec_constant,
+            } => {
                 let raw = sys::dxil_spv_option_rasterizer_sample_count {
                     base,
                     sample_count: *sample_count,
@@ -603,7 +685,11 @@ impl ConverterOption {
                 };
                 (raw.base, RawOptionData::RasterizerSampleCount(raw))
             }
-            Self::RootConstantInlineUniformBlock { desc_set, binding, enable } => {
+            Self::RootConstantInlineUniformBlock {
+                desc_set,
+                binding,
+                enable,
+            } => {
                 let raw = sys::dxil_spv_option_root_constant_inline_uniform_block {
                     base,
                     desc_set: *desc_set,
@@ -626,7 +712,10 @@ impl ConverterOption {
                 };
                 (raw.base, RawOptionData::PhysicalStorageBuffer(raw))
             }
-            Self::SbtDescriptorSizeLog2 { size_log2_srv_uav_cbv, size_log2_sampler } => {
+            Self::SbtDescriptorSizeLog2 {
+                size_log2_srv_uav_cbv,
+                size_log2_sampler,
+            } => {
                 let raw = sys::dxil_spv_option_sbt_descriptor_size_log2 {
                     base,
                     size_log2_srv_uav_cbv: *size_log2_srv_uav_cbv,
@@ -662,7 +751,11 @@ impl ConverterOption {
                 };
                 (raw.base, RawOptionData::BindlessTypedBufferOffsets(raw))
             }
-            Self::BindlessOffsetBufferLayout { untyped_offset, typed_offset, stride } => {
+            Self::BindlessOffsetBufferLayout {
+                untyped_offset,
+                typed_offset,
+                stride,
+            } => {
                 let raw = sys::dxil_spv_option_bindless_offset_buffer_layout {
                     base,
                     untyped_offset: *untyped_offset,
@@ -678,7 +771,15 @@ impl ConverterOption {
                 };
                 (raw.base, RawOptionData::StorageInputOutput16Bit(raw))
             }
-            Self::DescriptorQa { enabled, version, global_desc_set, global_binding, heap_desc_set, heap_binding, shader_hash } => {
+            Self::DescriptorQa {
+                enabled,
+                version,
+                global_desc_set,
+                global_binding,
+                heap_desc_set,
+                heap_binding,
+                shader_hash,
+            } => {
                 let raw = sys::dxil_spv_option_descriptor_qa {
                     base,
                     enabled: bool_to_dxil(*enabled),
@@ -710,7 +811,10 @@ impl ConverterOption {
                     base,
                     supported: bool_to_dxil(*supported),
                 };
-                (raw.base, RawOptionData::ShaderRayTracingPrimitiveCulling(raw))
+                (
+                    raw.base,
+                    RawOptionData::ShaderRayTracingPrimitiveCulling(raw),
+                )
             }
             Self::InvariantPosition { enabled } => {
                 let raw = sys::dxil_spv_option_invariant_position {
@@ -719,11 +823,16 @@ impl ConverterOption {
                 };
                 (raw.base, RawOptionData::InvariantPosition(raw))
             }
-            Self::ScalarBlockLayout { supported, supports_per_component_robustness } => {
+            Self::ScalarBlockLayout {
+                supported,
+                supports_per_component_robustness,
+            } => {
                 let raw = sys::dxil_spv_option_scalar_block_layout {
                     base,
                     supported: bool_to_dxil(*supported),
-                    supports_per_component_robustness: bool_to_dxil(*supports_per_component_robustness),
+                    supports_per_component_robustness: bool_to_dxil(
+                        *supports_per_component_robustness,
+                    ),
                 };
                 (raw.base, RawOptionData::ScalarBlockLayout(raw))
             }
@@ -748,15 +857,24 @@ impl ConverterOption {
                 };
                 (raw.base, RawOptionData::ArithmeticRelaxedPrecision(raw))
             }
-            Self::PhysicalAddressDescriptorIndexing { element_stride, element_offset } => {
+            Self::PhysicalAddressDescriptorIndexing {
+                element_stride,
+                element_offset,
+            } => {
                 let raw = sys::dxil_spv_option_physical_address_descriptor_indexing {
                     base,
                     element_stride: *element_stride,
                     element_offset: *element_offset,
                 };
-                (raw.base, RawOptionData::PhysicalAddressDescriptorIndexing(raw))
+                (
+                    raw.base,
+                    RawOptionData::PhysicalAddressDescriptorIndexing(raw),
+                )
             }
-            Self::ForceSubgroupSize { forced_value, wave_size_enable } => {
+            Self::ForceSubgroupSize {
+                forced_value,
+                wave_size_enable,
+            } => {
                 let raw = sys::dxil_spv_option_force_subgroup_size {
                     base,
                     forced_value: *forced_value,
@@ -764,11 +882,18 @@ impl ConverterOption {
                 };
                 (raw.base, RawOptionData::ForceSubgroupSize(raw))
             }
-            Self::DenormPreserveSupport { supports_float16_denorm_preserve, supports_float64_denorm_preserve } => {
+            Self::DenormPreserveSupport {
+                supports_float16_denorm_preserve,
+                supports_float64_denorm_preserve,
+            } => {
                 let raw = sys::dxil_spv_option_denorm_preserve_support {
                     base,
-                    supports_float16_denorm_preserve: bool_to_dxil(*supports_float16_denorm_preserve),
-                    supports_float64_denorm_preserve: bool_to_dxil(*supports_float64_denorm_preserve),
+                    supports_float16_denorm_preserve: bool_to_dxil(
+                        *supports_float16_denorm_preserve,
+                    ),
+                    supports_float64_denorm_preserve: bool_to_dxil(
+                        *supports_float64_denorm_preserve,
+                    ),
                 };
                 (raw.base, RawOptionData::DenormPreserveSupport(raw))
             }
@@ -793,7 +918,10 @@ impl ConverterOption {
                 };
                 (raw.base, RawOptionData::DeadCodeEliminate(raw))
             }
-            Self::PreciseControl { force_precise, propagate_precise } => {
+            Self::PreciseControl {
+                force_precise,
+                propagate_precise,
+            } => {
                 let raw = sys::dxil_spv_option_precise_control {
                     base,
                     force_precise: bool_to_dxil(*force_precise),
@@ -801,7 +929,10 @@ impl ConverterOption {
                 };
                 (raw.base, RawOptionData::PreciseControl(raw))
             }
-            Self::SampleGradOptimizationControl { enabled, assume_uniform_scale } => {
+            Self::SampleGradOptimizationControl {
+                enabled,
+                assume_uniform_scale,
+            } => {
                 let raw = sys::dxil_spv_option_sample_grad_optimization_control {
                     base,
                     enabled: bool_to_dxil(*enabled),
@@ -809,15 +940,26 @@ impl ConverterOption {
                 };
                 (raw.base, RawOptionData::SampleGradOptimizationControl(raw))
             }
-            Self::OpacityMicromap { trace_ray_enabled, ray_query_force_omm_execution_mode_in_legacy_sm } => {
+            Self::OpacityMicromap {
+                trace_ray_enabled,
+                ray_query_force_omm_execution_mode_in_legacy_sm,
+            } => {
                 let raw = sys::dxil_spv_option_opacity_micromap {
                     base,
                     trace_ray_enabled: bool_to_dxil(*trace_ray_enabled),
-                    ray_query_force_omm_execution_mode_in_legacy_sm: bool_to_dxil(*ray_query_force_omm_execution_mode_in_legacy_sm),
+                    ray_query_force_omm_execution_mode_in_legacy_sm: bool_to_dxil(
+                        *ray_query_force_omm_execution_mode_in_legacy_sm,
+                    ),
                 };
                 (raw.base, RawOptionData::OpacityMicromap(raw))
             }
-            Self::BranchControl { use_shader_metadata, force_unroll, force_loop, force_flatten, force_branch } => {
+            Self::BranchControl {
+                use_shader_metadata,
+                force_unroll,
+                force_loop,
+                force_flatten,
+                force_branch,
+            } => {
                 let raw = sys::dxil_spv_option_branch_control {
                     base,
                     use_shader_metadata: bool_to_dxil(*use_shader_metadata),
@@ -828,7 +970,10 @@ impl ConverterOption {
                 };
                 (raw.base, RawOptionData::BranchControl(raw))
             }
-            Self::SubgroupProperties { minimum_size, maximum_size } => {
+            Self::SubgroupProperties {
+                minimum_size,
+                maximum_size,
+            } => {
                 let raw = sys::dxil_spv_option_subgroup_properties {
                     base,
                     minimum_size: *minimum_size,
@@ -850,7 +995,11 @@ impl ConverterOption {
                 };
                 (raw.base, RawOptionData::ComputeShaderDerivativesNv(raw))
             }
-            Self::QuadControlReconvergence { supports_quad_control, supports_maximal_reconvergence, force_maximal_reconvergence } => {
+            Self::QuadControlReconvergence {
+                supports_quad_control,
+                supports_maximal_reconvergence,
+                force_maximal_reconvergence,
+            } => {
                 let raw = sys::dxil_spv_option_quad_control_reconvergence {
                     base,
                     supports_quad_control: bool_to_dxil(*supports_quad_control),
@@ -866,7 +1015,10 @@ impl ConverterOption {
                 };
                 (raw.base, RawOptionData::RawAccessChainsNv(raw))
             }
-            Self::DriverVersion { driver_id, driver_version } => {
+            Self::DriverVersion {
+                driver_id,
+                driver_version,
+            } => {
                 let raw = sys::dxil_spv_option_driver_version {
                     base,
                     driver_id: *driver_id,
@@ -874,7 +1026,10 @@ impl ConverterOption {
                 };
                 (raw.base, RawOptionData::DriverVersion(raw))
             }
-            Self::ComputeShaderDerivatives { supports_nv, supports_khr } => {
+            Self::ComputeShaderDerivatives {
+                supports_nv,
+                supports_khr,
+            } => {
                 let raw = sys::dxil_spv_option_compute_shader_derivatives {
                     base,
                     supports_nv: bool_to_dxil(*supports_nv),
@@ -882,7 +1037,16 @@ impl ConverterOption {
                 };
                 (raw.base, RawOptionData::ComputeShaderDerivatives(raw))
             }
-            Self::InstructionInstrumentation { enabled, version, control_desc_set, control_binding, payload_desc_set, payload_binding, shader_hash, kind } => {
+            Self::InstructionInstrumentation {
+                enabled,
+                version,
+                control_desc_set,
+                control_binding,
+                payload_desc_set,
+                payload_binding,
+                shader_hash,
+                kind,
+            } => {
                 let raw = sys::dxil_spv_option_instruction_instrumentation {
                     base,
                     enabled: bool_to_dxil(*enabled),
@@ -903,7 +1067,11 @@ impl ConverterOption {
                 };
                 (raw.base, RawOptionData::ShaderQuirk(raw))
             }
-            Self::ExtendedRobustness { robust_group_shared, robust_alloca, robust_constant_lut } => {
+            Self::ExtendedRobustness {
+                robust_group_shared,
+                robust_alloca,
+                robust_constant_lut,
+            } => {
                 let raw = sys::dxil_spv_option_extended_robustness {
                     base,
                     robust_group_shared: bool_to_dxil(*robust_group_shared),
@@ -926,15 +1094,24 @@ impl ConverterOption {
                 };
                 (raw.base, RawOptionData::VulkanMemoryModel(raw))
             }
-            Self::Float8Support { wmma_fp8, nv_cooperative_matrix2_conversions } => {
+            Self::Float8Support {
+                wmma_fp8,
+                nv_cooperative_matrix2_conversions,
+            } => {
                 let raw = sys::dxil_spv_option_float8_support {
                     base,
                     wmma_fp8: bool_to_dxil(*wmma_fp8),
-                    nv_cooperative_matrix2_conversions: bool_to_dxil(*nv_cooperative_matrix2_conversions),
+                    nv_cooperative_matrix2_conversions: bool_to_dxil(
+                        *nv_cooperative_matrix2_conversions,
+                    ),
                 };
                 (raw.base, RawOptionData::Float8Support(raw))
             }
-            Self::Nvapi { enabled, register_index, register_space } => {
+            Self::Nvapi {
+                enabled,
+                register_index,
+                register_space,
+            } => {
                 let raw = sys::dxil_spv_option_nvapi {
                     base,
                     enabled: bool_to_dxil(*enabled),
@@ -965,11 +1142,18 @@ impl ConverterOption {
                 };
                 (raw.base, RawOptionData::ComputeShaderDerivativesQuad(raw))
             }
-            Self::SsboAddressingBehavior { ssbo_wraps_32bit_offset_before_robustness, raw_access_chain_wraps_32bit_offset_before_robustness } => {
+            Self::SsboAddressingBehavior {
+                ssbo_wraps_32bit_offset_before_robustness,
+                raw_access_chain_wraps_32bit_offset_before_robustness,
+            } => {
                 let raw = sys::dxil_spv_option_ssbo_addressing_behavior {
                     base,
-                    ssbo_wraps_32bit_offset_before_robustness: bool_to_dxil(*ssbo_wraps_32bit_offset_before_robustness),
-                    raw_access_chain_wraps_32bit_offset_before_robustness: bool_to_dxil(*raw_access_chain_wraps_32bit_offset_before_robustness),
+                    ssbo_wraps_32bit_offset_before_robustness: bool_to_dxil(
+                        *ssbo_wraps_32bit_offset_before_robustness,
+                    ),
+                    raw_access_chain_wraps_32bit_offset_before_robustness: bool_to_dxil(
+                        *raw_access_chain_wraps_32bit_offset_before_robustness,
+                    ),
                 };
                 (raw.base, RawOptionData::SsboAddressingBehavior(raw))
             }
@@ -1123,13 +1307,22 @@ mod tests {
     #[test]
     fn option_kind_round_trip() {
         let opt = ConverterOption::ShaderDemoteToHelper { supported: true };
-        assert_eq!(opt.kind(), sys::dxil_spv_option_DXIL_SPV_OPTION_SHADER_DEMOTE_TO_HELPER);
+        assert_eq!(
+            opt.kind(),
+            sys::dxil_spv_option_DXIL_SPV_OPTION_SHADER_DEMOTE_TO_HELPER
+        );
 
         let opt = ConverterOption::DualSourceBlending { enabled: false };
-        assert_eq!(opt.kind(), sys::dxil_spv_option_DXIL_SPV_OPTION_DUAL_SOURCE_BLENDING);
+        assert_eq!(
+            opt.kind(),
+            sys::dxil_spv_option_DXIL_SPV_OPTION_DUAL_SOURCE_BLENDING
+        );
 
         let opt = ConverterOption::SsboAlignment { alignment: 16 };
-        assert_eq!(opt.kind(), sys::dxil_spv_option_DXIL_SPV_OPTION_SSBO_ALIGNMENT);
+        assert_eq!(
+            opt.kind(),
+            sys::dxil_spv_option_DXIL_SPV_OPTION_SSBO_ALIGNMENT
+        );
     }
 
     #[test]
@@ -1145,6 +1338,9 @@ mod tests {
         let opt = ConverterOption::ShaderDemoteToHelper { supported: true };
         let (_base, data) = opt.to_raw();
         let base = data.as_base();
-        assert_eq!(base.type_, sys::dxil_spv_option_DXIL_SPV_OPTION_SHADER_DEMOTE_TO_HELPER);
+        assert_eq!(
+            base.type_,
+            sys::dxil_spv_option_DXIL_SPV_OPTION_SHADER_DEMOTE_TO_HELPER
+        );
     }
 }

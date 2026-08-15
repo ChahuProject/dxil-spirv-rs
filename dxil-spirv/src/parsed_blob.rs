@@ -69,7 +69,9 @@ impl ParsedBlob {
     /// name. Returns [`ShaderStage::Unknown`] if the entry is not found.
     pub fn shader_stage_for_entry(&self, entry: &str) -> Result<ShaderStage> {
         let c_entry = CString::new(entry).map_err(|_| Error::InvalidString)?;
-        let raw = unsafe { sys::dxil_spv_parsed_blob_get_shader_stage_for_entry(self.handle, c_entry.as_ptr()) };
+        let raw = unsafe {
+            sys::dxil_spv_parsed_blob_get_shader_stage_for_entry(self.handle, c_entry.as_ptr())
+        };
         Ok(ShaderStage::from(raw))
     }
 
@@ -79,7 +81,11 @@ impl ParsedBlob {
         let c_entry = CString::new(entry).map_err(|_| Error::InvalidString)?;
         let mut index = 0u32;
         let result = unsafe {
-            sys::dxil_spv_parsed_blob_get_entry_index_by_name(self.handle, c_entry.as_ptr(), &mut index)
+            sys::dxil_spv_parsed_blob_get_entry_index_by_name(
+                self.handle,
+                c_entry.as_ptr(),
+                &mut index,
+            )
         };
         match result {
             sys::dxil_spv_result_DXIL_SPV_SUCCESS => Ok(Some(index)),
@@ -91,14 +97,15 @@ impl ParsedBlob {
     /// Returns the mangled name of the entry point at `index`.
     pub fn entry_point_name(&self, index: u32) -> Result<String> {
         let mut ptr: *const std::os::raw::c_char = std::ptr::null();
-        let result = unsafe {
-            sys::dxil_spv_parsed_blob_get_entry_point_name(self.handle, index, &mut ptr)
-        };
+        let result =
+            unsafe { sys::dxil_spv_parsed_blob_get_entry_point_name(self.handle, index, &mut ptr) };
         check(result)?;
         if ptr.is_null() {
             return Err(Error::NoOutput);
         }
-        Ok(unsafe { CStr::from_ptr(ptr) }.to_string_lossy().into_owned())
+        Ok(unsafe { CStr::from_ptr(ptr) }
+            .to_string_lossy()
+            .into_owned())
     }
 
     /// Returns the demangled name of the entry point at `index`.
@@ -111,7 +118,9 @@ impl ParsedBlob {
         if ptr.is_null() {
             return Err(Error::NoOutput);
         }
-        Ok(unsafe { CStr::from_ptr(ptr) }.to_string_lossy().into_owned())
+        Ok(unsafe { CStr::from_ptr(ptr) }
+            .to_string_lossy()
+            .into_owned())
     }
 
     /// Returns the disassembled LLVM IR as a UTF-8 string.
@@ -119,19 +128,23 @@ impl ParsedBlob {
     /// Only available for DXIL blobs; legacy DXBC blobs do not carry IR.
     pub fn disassembled_ir(&self) -> Result<String> {
         let mut ptr: *const std::os::raw::c_char = std::ptr::null();
-        let result = unsafe { sys::dxil_spv_parsed_blob_get_disassembled_ir(self.handle, &mut ptr) };
+        let result =
+            unsafe { sys::dxil_spv_parsed_blob_get_disassembled_ir(self.handle, &mut ptr) };
         check(result)?;
         if ptr.is_null() {
             return Err(Error::NoOutput);
         }
-        Ok(unsafe { CStr::from_ptr(ptr) }.to_string_lossy().into_owned())
+        Ok(unsafe { CStr::from_ptr(ptr) }
+            .to_string_lossy()
+            .into_owned())
     }
 
     /// Returns the raw LLVM bitcode for the blob.
     pub fn raw_ir(&self) -> Result<Vec<u8>> {
         let mut data: *const std::os::raw::c_void = std::ptr::null();
         let mut size = 0usize;
-        let result = unsafe { sys::dxil_spv_parsed_blob_get_raw_ir(self.handle, &mut data, &mut size) };
+        let result =
+            unsafe { sys::dxil_spv_parsed_blob_get_raw_ir(self.handle, &mut data, &mut size) };
         check(result)?;
         if data.is_null() || size == 0 {
             return Err(Error::NoOutput);

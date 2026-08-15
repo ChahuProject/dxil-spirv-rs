@@ -27,7 +27,9 @@ pub struct Converter {
 
 impl std::fmt::Debug for Converter {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("Converter").field("handle", &self.handle).finish()
+        f.debug_struct("Converter")
+            .field("handle", &self.handle)
+            .finish()
     }
 }
 
@@ -53,7 +55,11 @@ impl Converter {
     pub fn new_with_reflection(blob: &ParsedBlob, reflection: &ParsedBlob) -> Result<Self> {
         let mut handle: sys::dxil_spv_converter = std::ptr::null_mut();
         let result = unsafe {
-            sys::dxil_spv_create_converter_with_reflection(blob.handle, reflection.handle, &mut handle)
+            sys::dxil_spv_create_converter_with_reflection(
+                blob.handle,
+                reflection.handle,
+                &mut handle,
+            )
         };
         check(result)?;
         if handle.is_null() {
@@ -79,14 +85,14 @@ impl Converter {
             data: std::ptr::null(),
             size: 0,
         };
-        let result = unsafe { sys::dxil_spv_converter_get_compiled_spirv(self.handle, &mut compiled) };
+        let result =
+            unsafe { sys::dxil_spv_converter_get_compiled_spirv(self.handle, &mut compiled) };
         check(result)?;
         if compiled.data.is_null() || compiled.size == 0 {
             return Err(Error::NoOutput);
         }
-        let words = unsafe {
-            std::slice::from_raw_parts(compiled.data.cast::<u32>(), compiled.size / 4)
-        };
+        let words =
+            unsafe { std::slice::from_raw_parts(compiled.data.cast::<u32>(), compiled.size / 4) };
         Ok(words.to_vec())
     }
 
@@ -105,12 +111,15 @@ impl Converter {
     /// Returns `None` when no entry point has been compiled yet.
     pub fn compiled_entry_point(&self) -> Result<Option<String>> {
         let mut ptr: *const std::os::raw::c_char = std::ptr::null();
-        let result = unsafe { sys::dxil_spv_converter_get_compiled_entry_point(self.handle, &mut ptr) };
+        let result =
+            unsafe { sys::dxil_spv_converter_get_compiled_entry_point(self.handle, &mut ptr) };
         check(result)?;
         if ptr.is_null() {
             return Ok(None);
         }
-        let s = unsafe { CStr::from_ptr(ptr) }.to_string_lossy().into_owned();
+        let s = unsafe { CStr::from_ptr(ptr) }
+            .to_string_lossy()
+            .into_owned();
         Ok(Some(s))
     }
 
@@ -142,7 +151,12 @@ impl Converter {
     pub fn compute_workgroup_dimensions(&self) -> Result<(u32, u32, u32)> {
         let (mut x, mut y, mut z) = (0u32, 0u32, 0u32);
         let result = unsafe {
-            sys::dxil_spv_converter_get_compute_workgroup_dimensions(self.handle, &mut x, &mut y, &mut z)
+            sys::dxil_spv_converter_get_compute_workgroup_dimensions(
+                self.handle,
+                &mut x,
+                &mut y,
+                &mut z,
+            )
         };
         check(result)?;
         Ok((x, y, z))
@@ -165,7 +179,12 @@ impl Converter {
     pub fn compute_wave_size_range(&self) -> Result<(u32, u32, u32)> {
         let (mut min, mut max, mut preferred) = (0u32, 0u32, 0u32);
         let result = unsafe {
-            sys::dxil_spv_converter_get_compute_wave_size_range(self.handle, &mut min, &mut max, &mut preferred)
+            sys::dxil_spv_converter_get_compute_wave_size_range(
+                self.handle,
+                &mut min,
+                &mut max,
+                &mut preferred,
+            )
         };
         check(result)?;
         Ok((min, max, preferred))
@@ -194,7 +213,8 @@ impl Converter {
     /// Returns the number of patch vertices for hull shaders.
     pub fn patch_vertex_count(&self) -> Result<u32> {
         let mut count = 0u32;
-        let result = unsafe { sys::dxil_spv_converter_get_patch_vertex_count(self.handle, &mut count) };
+        let result =
+            unsafe { sys::dxil_spv_converter_get_patch_vertex_count(self.handle, &mut count) };
         check(result)?;
         Ok(count)
     }
@@ -202,9 +222,8 @@ impl Converter {
     /// Returns the patch-location offset set via [`Converter::set_patch_location_offset`].
     pub fn patch_location_offset(&self) -> Result<u32> {
         let mut offset = 0u32;
-        let result = unsafe {
-            sys::dxil_spv_converter_get_patch_location_offset(self.handle, &mut offset)
-        };
+        let result =
+            unsafe { sys::dxil_spv_converter_get_patch_location_offset(self.handle, &mut offset) };
         check(result)?;
         Ok(offset)
     }
@@ -218,9 +237,7 @@ impl Converter {
     ///
     /// Must be called after [`Converter::run`].
     pub fn uses_shader_feature(&self, feature: ShaderFeature) -> bool {
-        unsafe {
-            sys::dxil_spv_converter_uses_shader_feature(self.handle, feature.into()) == 1
-        }
+        unsafe { sys::dxil_spv_converter_uses_shader_feature(self.handle, feature.into()) == 1 }
     }
 
     /// Returns analysis warnings produced during compilation, if any.
@@ -231,7 +248,11 @@ impl Converter {
         if ptr.is_null() {
             return None;
         }
-        Some(unsafe { CStr::from_ptr(ptr) }.to_string_lossy().into_owned())
+        Some(
+            unsafe { CStr::from_ptr(ptr) }
+                .to_string_lossy()
+                .into_owned(),
+        )
     }
 
     /// Register a callback that remaps SRV bindings.
@@ -242,11 +263,15 @@ impl Converter {
     /// The closure is stored inside the converter and dropped with it.
     pub fn set_srv_remapper<F>(&mut self, callback: F)
     where
-        F: FnMut(&crate::binding::D3dBinding) -> Option<crate::binding::SrvVulkanBinding> + Send + 'static,
+        F: FnMut(&crate::binding::D3dBinding) -> Option<crate::binding::SrvVulkanBinding>
+            + Send
+            + 'static,
     {
         let boxed = Box::new(callback);
         let (remapper, cb, userdata) = SrvRemapper::register(boxed);
-        let holder = self._remappers.get_or_insert_with(|| Box::new(RemapperHolder::default()));
+        let holder = self
+            ._remappers
+            .get_or_insert_with(|| Box::new(RemapperHolder::default()));
         holder.srv = Some(remapper);
         unsafe { sys::dxil_spv_converter_set_srv_remapper(self.handle, cb, userdata) };
     }
@@ -254,11 +279,15 @@ impl Converter {
     /// Register a callback that remaps UAV bindings.
     pub fn set_uav_remapper<F>(&mut self, callback: F)
     where
-        F: FnMut(&crate::binding::UavD3dBinding) -> Option<crate::binding::UavVulkanBinding> + Send + 'static,
+        F: FnMut(&crate::binding::UavD3dBinding) -> Option<crate::binding::UavVulkanBinding>
+            + Send
+            + 'static,
     {
         let boxed = Box::new(callback);
         let (remapper, cb, userdata) = UavRemapper::register(boxed);
-        let holder = self._remappers.get_or_insert_with(|| Box::new(RemapperHolder::default()));
+        let holder = self
+            ._remappers
+            .get_or_insert_with(|| Box::new(RemapperHolder::default()));
         holder.uav = Some(remapper);
         unsafe { sys::dxil_spv_converter_set_uav_remapper(self.handle, cb, userdata) };
     }
@@ -266,11 +295,15 @@ impl Converter {
     /// Register a callback that remaps CBV bindings.
     pub fn set_cbv_remapper<F>(&mut self, callback: F)
     where
-        F: FnMut(&crate::binding::D3dBinding) -> Option<crate::binding::CbvVulkanBinding> + Send + 'static,
+        F: FnMut(&crate::binding::D3dBinding) -> Option<crate::binding::CbvVulkanBinding>
+            + Send
+            + 'static,
     {
         let boxed = Box::new(callback);
         let (remapper, cb, userdata) = CbvRemapper::register(boxed);
-        let holder = self._remappers.get_or_insert_with(|| Box::new(RemapperHolder::default()));
+        let holder = self
+            ._remappers
+            .get_or_insert_with(|| Box::new(RemapperHolder::default()));
         holder.cbv = Some(remapper);
         unsafe { sys::dxil_spv_converter_set_cbv_remapper(self.handle, cb, userdata) };
     }
@@ -278,11 +311,15 @@ impl Converter {
     /// Register a callback that remaps sampler bindings.
     pub fn set_sampler_remapper<F>(&mut self, callback: F)
     where
-        F: FnMut(&crate::binding::D3dBinding) -> Option<crate::binding::VulkanBinding> + Send + 'static,
+        F: FnMut(&crate::binding::D3dBinding) -> Option<crate::binding::VulkanBinding>
+            + Send
+            + 'static,
     {
         let boxed = Box::new(callback);
         let (remapper, cb, userdata) = SamplerRemapper::register(boxed);
-        let holder = self._remappers.get_or_insert_with(|| Box::new(RemapperHolder::default()));
+        let holder = self
+            ._remappers
+            .get_or_insert_with(|| Box::new(RemapperHolder::default()));
         holder.sampler = Some(remapper);
         unsafe { sys::dxil_spv_converter_set_sampler_remapper(self.handle, cb, userdata) };
     }
@@ -290,11 +327,15 @@ impl Converter {
     /// Register a callback that remaps vertex input attributes.
     pub fn set_vertex_input_remapper<F>(&mut self, callback: F)
     where
-        F: FnMut(&crate::binding::D3dVertexInput) -> Option<crate::binding::VulkanVertexInput> + Send + 'static,
+        F: FnMut(&crate::binding::D3dVertexInput) -> Option<crate::binding::VulkanVertexInput>
+            + Send
+            + 'static,
     {
         let boxed = Box::new(callback);
         let (remapper, cb, userdata) = VertexInputRemapper::register(boxed);
-        let holder = self._remappers.get_or_insert_with(|| Box::new(RemapperHolder::default()));
+        let holder = self
+            ._remappers
+            .get_or_insert_with(|| Box::new(RemapperHolder::default()));
         holder.vertex_input = Some(remapper);
         unsafe { sys::dxil_spv_converter_set_vertex_input_remapper(self.handle, cb, userdata) };
     }
@@ -302,11 +343,15 @@ impl Converter {
     /// Register a callback that remaps stage-input variables.
     pub fn set_stage_input_remapper<F>(&mut self, callback: F)
     where
-        F: FnMut(&crate::binding::D3dShaderStageIo) -> Option<crate::binding::VulkanShaderStageIo> + Send + 'static,
+        F: FnMut(&crate::binding::D3dShaderStageIo) -> Option<crate::binding::VulkanShaderStageIo>
+            + Send
+            + 'static,
     {
         let boxed = Box::new(callback);
         let (remapper, cb, userdata) = StageInputRemapper::register(boxed);
-        let holder = self._remappers.get_or_insert_with(|| Box::new(RemapperHolder::default()));
+        let holder = self
+            ._remappers
+            .get_or_insert_with(|| Box::new(RemapperHolder::default()));
         holder.stage_input = Some(remapper);
         unsafe { sys::dxil_spv_converter_set_stage_input_remapper(self.handle, cb, userdata) };
     }
@@ -314,11 +359,15 @@ impl Converter {
     /// Register a callback that remaps stage-output variables.
     pub fn set_stage_output_remapper<F>(&mut self, callback: F)
     where
-        F: FnMut(&crate::binding::D3dShaderStageIo) -> Option<crate::binding::VulkanShaderStageIo> + Send + 'static,
+        F: FnMut(&crate::binding::D3dShaderStageIo) -> Option<crate::binding::VulkanShaderStageIo>
+            + Send
+            + 'static,
     {
         let boxed = Box::new(callback);
         let (remapper, cb, userdata) = StageOutputRemapper::register(boxed);
-        let holder = self._remappers.get_or_insert_with(|| Box::new(RemapperHolder::default()));
+        let holder = self
+            ._remappers
+            .get_or_insert_with(|| Box::new(RemapperHolder::default()));
         holder.stage_output = Some(remapper);
         unsafe { sys::dxil_spv_converter_set_stage_output_remapper(self.handle, cb, userdata) };
     }
@@ -326,11 +375,15 @@ impl Converter {
     /// Register a callback that remaps stream-output variables.
     pub fn set_stream_output_remapper<F>(&mut self, callback: F)
     where
-        F: FnMut(&crate::binding::D3dStreamOutput) -> Option<crate::binding::VulkanStreamOutput> + Send + 'static,
+        F: FnMut(&crate::binding::D3dStreamOutput) -> Option<crate::binding::VulkanStreamOutput>
+            + Send
+            + 'static,
     {
         let boxed = Box::new(callback);
         let (remapper, cb, userdata) = StreamOutputRemapper::register(boxed);
-        let holder = self._remappers.get_or_insert_with(|| Box::new(RemapperHolder::default()));
+        let holder = self
+            ._remappers
+            .get_or_insert_with(|| Box::new(RemapperHolder::default()));
         holder.stream_output = Some(remapper);
         unsafe { sys::dxil_spv_converter_set_stream_output_remapper(self.handle, cb, userdata) };
     }
