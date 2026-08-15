@@ -389,9 +389,16 @@ fn configure_converter(converter: &mut Converter, shader_path: &str) -> dxil_spi
         converter.add_option(&ConverterOption::PhysicalStorageBuffer { enable: true })?;
     }
     if name.contains(".local-root-signature.") {
-        converter.begin_local_root_descriptor_table()?;
-        converter.add_local_root_descriptor_table(ResourceClass::Srv, 0, 0, 1, 0);
-        converter.end_local_root_descriptor_table()?;
+        // Upstream --local-root-signature (dxil_spirv.cpp:1015-1022):
+        // adds local root constants and descriptors at space=15.
+        converter.add_local_root_constants(15, 0, 5);
+        converter.add_local_root_constants(15, 1, 6);
+        converter.add_local_root_descriptor(ResourceClass::Srv, 15, 1);
+        converter.add_local_root_descriptor(ResourceClass::Uav, 15, 1);
+        converter.add_local_root_descriptor(ResourceClass::Srv, 15, 2);
+        converter.add_local_root_descriptor(ResourceClass::Uav, 15, 2);
+        // BDA is enabled when local_root_signature is set (dxil_spirv.cpp:1091).
+        converter.add_option(&ConverterOption::PhysicalStorageBuffer { enable: true })?;
     }
 
     // ── Feature markers ─────────────────────────────────────────────────
@@ -531,18 +538,20 @@ fn configure_converter(converter: &mut Converter, shader_path: &str) -> dxil_spi
     }
 
     // ── Meta descriptors ────────────────────────────────────────────────
+    // Upstream: --meta-descriptor 0 3 10 20 (heap-robustness-cbv)
     if name.contains(".heap-robustness-cbv.") {
         converter.set_meta_descriptor(
             dxil_spirv::binding::MetaDescriptor::ResourceDescriptorHeapSize,
-            dxil_spirv::binding::MetaDescriptorKind::PushConstant,
+            dxil_spirv::binding::MetaDescriptorKind::UboContainingConstant,
             10,
             20,
         )?;
     }
+    // Upstream: --meta-descriptor 1 4 10 21 (heap-raw-va-cbv)
     if name.contains(".heap-raw-va-cbv.") {
         converter.set_meta_descriptor(
             dxil_spirv::binding::MetaDescriptor::RawDescriptorHeapView,
-            dxil_spirv::binding::MetaDescriptorKind::PushBda,
+            dxil_spirv::binding::MetaDescriptorKind::UboContainingBda,
             10,
             21,
         )?;
@@ -588,6 +597,7 @@ fn setup_remappers(converter: &mut Converter, shader_name: String) {
     let input_attachments = shader_name.contains(".input-attachment.");
     let root_descriptor = shader_name.contains(".root-descriptor.");
     let stream_out = shader_name.contains(".stream-out.");
+    let bda_instrumentation = shader_name.contains(".bda-instrumentation.");
 
     // SRV remapper — direct port of upstream remap_srv()
     converter.set_srv_remapper(move |d3d| {
@@ -614,8 +624,10 @@ fn setup_remappers(converter: &mut Converter, shader_name: String) {
             },
         };
 
-        // Root descriptor (BDA) takes precedence over everything
-        if root_descriptor {
+        // Root descriptor (BDA) takes precedence over everything,
+        // EXCEPT for bda-instrumentation which needs RTAS heap as SSBO
+        // for its dummy descriptor heap introspection buffer.
+        if root_descriptor && !bda_instrumentation {
             vk.buffer_binding.descriptor_type = VulkanDescriptorType::BufferDeviceAddress;
             vk.buffer_binding.root_constant_index = 1; // SRV root descriptor index
             return Some(vk);
