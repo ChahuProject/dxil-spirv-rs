@@ -26,8 +26,12 @@ pub enum Error {
     InvalidString,
 
     /// The requested option is not supported by the linked dxil-spirv library.
+    ///
+    /// The payload is the `dxil_spv_option` tag as a `u32`. The bindgen enum's
+    /// signedness differs across platforms (`c_int` vs `c_uint`), so the safe
+    /// layer normalizes to `u32`; option tags are always non-negative.
     #[error("unsupported dxil-spirv option: {0}")]
-    UnsupportedFeature(i32),
+    UnsupportedFeature(u32),
 }
 
 pub(crate) fn check(result: sys::dxil_spv_result) -> Result<()> {

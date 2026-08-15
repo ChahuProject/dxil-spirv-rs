@@ -130,7 +130,7 @@ impl Converter {
     /// by the linked library.
     pub fn add_option(&mut self, option: &ConverterOption) -> Result<()> {
         if !option.is_supported() {
-            return Err(Error::UnsupportedFeature(option.kind()));
+            return Err(Error::UnsupportedFeature(option.kind() as u32));
         }
         let (_base, data) = option.to_raw();
         let base = data.as_base();
