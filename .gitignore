@@ -3,3 +3,9 @@
 Cargo.lock
 *.pdb
 .omo/
+
+# Test data synced from upstream submodule by dxil-spirv-tests/build.rs.
+# These are generated/copied at build time and should not be committed.
+/tests/shaders/
+/tests/reference/
+/tests/shaders_manifest.txt

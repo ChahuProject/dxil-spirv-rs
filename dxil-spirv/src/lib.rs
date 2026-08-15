@@ -18,10 +18,10 @@
 #![forbid(unsafe_op_in_unsafe_fn)]
 #![warn(missing_docs)]
 
-mod binding;
+pub mod binding;
 mod converter;
 mod error;
-mod options;
+pub mod options;
 mod parsed_blob;
 mod remapper;
 mod stage;

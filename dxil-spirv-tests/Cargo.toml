@@ -1,0 +1,20 @@
+[package]
+name = "dxil-spirv-tests"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+publish = false
+
+[dependencies]
+dxil-spirv = { path = "../dxil-spirv" }
+
+[dev-dependencies]
+# spirv-cross2 will be added here for GLSL validation
+# walkdir = "2"  # Avoiding external deps for now
+
+[build-dependencies]
+ureq = { version = "2", default-features = false, features = ["tls"] }
+zip = { version = "2", default-features = false }

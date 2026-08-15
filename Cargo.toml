@@ -3,6 +3,7 @@ resolver = "2"
 members = [
     "dxil-spirv",
     "dxil-spirv-sys",
+    "dxil-spirv-tests",
 ]
 
 [workspace.package]
