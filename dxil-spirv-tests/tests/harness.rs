@@ -12,7 +12,7 @@ use dxil_spirv::binding::{
     SrvVulkanBinding, UavVulkanBinding, VulkanBinding, VulkanDescriptorType,
     VulkanShaderStageIo, VulkanShaderStageIoFlags, VulkanStreamOutput, VulkanVertexInput,
 };
-use dxil_spirv::options::ConverterOption;
+use dxil_spirv::options::{ConverterOption, InstructionInstrumentationType};
 use dxil_spirv::{Converter, ParsedBlob};
 
 /// Discover all shaders in the upstream shaders directory
@@ -314,10 +314,24 @@ fn configure_converter(converter: &mut Converter, shader_path: &str) -> dxil_spi
         minimum_size: 32,
         maximum_size: 64,
     })?;
+    // Upstream dxil_spirv.cpp always passes ssbo_alignment=1 (its CLI
+    // default) to the converter, overriding the library's internal default
+    // of 16. Without this, non-bindless SSBO buffers with natural alignment
+    // < 16 fail with "SSBO offset is only supported for bindless SSBOs".
+    converter.add_option(&ConverterOption::SsboAlignment { alignment: 1 })?;
 
     // ── Bindless / heap markers ─────────────────────────────────────────
     if name.contains(".bindless.") {
-        converter.add_option(&ConverterOption::BindlessCbvSsboEmulation { enable: true })?;
+        // Upstream --bindless: sets remapper.bindless = true and raises
+        // root_constant_word_count to at least 8. It also adds 64 dummy
+        // root-parameter mappings and enables PhysicalStorageBuffer (BDA).
+        // Note: it does NOT enable BindlessCbvSsboEmulation — that is only
+        // enabled by the separate --bindless-cbv-as-ssbo flag (.cbv-as-ssbo.).
+        converter.set_root_constant_word_count(8);
+        for i in 0..64u32 {
+            converter.add_root_parameter_mapping(i, 4 * i);
+        }
+        converter.add_option(&ConverterOption::PhysicalStorageBuffer { enable: true })?;
     }
     if name.contains(".nobda.") {
         converter.add_option(&ConverterOption::PhysicalStorageBuffer { enable: false })?;
@@ -353,15 +367,24 @@ fn configure_converter(converter: &mut Converter, shader_path: &str) -> dxil_spi
 
     // ── Root signature markers ──────────────────────────────────────────
     if name.contains(".root-constant.") {
-        converter.set_root_constant_word_count(4);
-        converter.add_local_root_constants(0, 0, 12);
-        converter.add_local_root_constants(1, 0, 16);
+        // Upstream --root-constant 0 0 4 12 / --root-constant 1 0 0 16:
+        // populates the remapper root_constants list (used by remap_cbv to
+        // select push constants) and raises root_constant_word_count to
+        // max(word_count + word_offset) = 16. The converter only receives
+        // the word count; the CBV remapper mirrors the list.
+        converter.set_root_constant_word_count(16);
     }
     if name.contains(".root-descriptor.") {
+        // Upstream --root-descriptor cbv/srv 0 0, uav 0 0/1: populates
+        // remapper.root_descriptors (4 entries) and sets the converter's
+        // root descriptor count to 4. Non-empty root_descriptors also
+        // enables PhysicalStorageBuffer (BDA).
         converter.add_root_descriptor_mapping(0, 0, 0); // cbv
         converter.add_root_descriptor_mapping(1, 0, 0); // srv
         converter.add_root_descriptor_mapping(2, 0, 0); // uav 0
         converter.add_root_descriptor_mapping(2, 0, 1); // uav 1
+        converter.set_root_descriptor_count(4);
+        converter.add_option(&ConverterOption::PhysicalStorageBuffer { enable: true })?;
     }
     if name.contains(".local-root-signature.") {
         converter.begin_local_root_descriptor_table()?;
@@ -440,6 +463,70 @@ fn configure_converter(converter: &mut Converter, shader_path: &str) -> dxil_spi
             element_offset: 3,
         })?;
     }
+    if name.contains(".descriptor-qa.") {
+        converter.add_option(&ConverterOption::DescriptorQa {
+            enabled: true,
+            version: 2,
+            global_desc_set: 10,
+            global_binding: 10,
+            heap_desc_set: 10,
+            heap_binding: 11,
+            shader_hash: 0xdeadbeef,
+        })?;
+    }
+    if name.contains(".bda-instrumentation.") {
+        converter.add_option(&ConverterOption::InstructionInstrumentation {
+            enabled: true,
+            version: 2,
+            control_desc_set: 0,
+            control_binding: 2,
+            payload_desc_set: 0,
+            payload_binding: 3,
+            shader_hash: 0xabcd,
+            kind: InstructionInstrumentationType::BufferSynchronizationValidation,
+        })?;
+    }
+    if name.contains(".vkmm.") {
+        converter.add_option(&ConverterOption::VulkanMemoryModel { enabled: true })?;
+    }
+    if name.contains(".nvapi.") {
+        converter.add_option(&ConverterOption::Nvapi {
+            enabled: true,
+            register_index: 127,
+            register_space: 0,
+        })?;
+    }
+    if name.contains(".full-wmma.") {
+        converter.add_option(&ConverterOption::Float8Support {
+            wmma_fp8: true,
+            nv_cooperative_matrix2_conversions: true,
+        })?;
+    }
+    if name.contains(".assume-32bit-wrap.") {
+        converter.add_option(&ConverterOption::SsboAddressingBehavior {
+            ssbo_wraps_32bit_offset_before_robustness: true,
+            raw_access_chain_wraps_32bit_offset_before_robustness: true,
+        })?;
+    }
+    if name.contains(".auto-group-shared-barrier.") {
+        converter.add_option(&ConverterOption::ShaderQuirk {
+            quirk: dxil_spirv::options::ShaderQuirk::GroupSharedAutoBarrier,
+        })?;
+    }
+    if name.contains(".mixed-float-dot-product.") {
+        converter.add_option(&ConverterOption::MixedFloatDotProduct {
+            fp16_fp16_fp32: true,
+        })?;
+    }
+    if name.contains(".rt-swizzle.") {
+        // Upstream packs 2 bits per component (swiz |= comp << (2 * c)):
+        // wxyz = 3 | (0 << 2) | (1 << 4) | (2 << 6) = 0x93
+        // yxwz = 1 | (0 << 2) | (3 << 4) | (2 << 6) = 0xB1
+        // xyzw (identity) = 0 | (1 << 2) | (2 << 4) | (3 << 6) = 0xE4
+        converter.add_option(&ConverterOption::OutputSwizzle {
+            swizzles: vec![0x93, 0xB1, 0xE4, 0xE4, 0xE4, 0xE4, 0xE4, 0xE4],
+        })?;
+    }
 
     // ── Meta descriptors ────────────────────────────────────────────────
     if name.contains(".heap-robustness-cbv.") {
@@ -459,8 +546,11 @@ fn configure_converter(converter: &mut Converter, shader_path: &str) -> dxil_spi
         )?;
     }
     if name.contains(".view-instancing.") {
-        // ViewInstancing is not a standalone ConverterOption; it is enabled
-        // via meta descriptors and shader features.
+        // ViewInstancing is enabled via meta descriptors and shader features.
+        // Upstream also has --view-instancing-last-pre-rasterization-stage (.last-pre-raster.),
+        // --view-index-to-view-instance-spec-id 1000 (.view-instancing-multiview.), and
+        // --view-instance-to-viewport-spec-id 1001 (.view-instancing-viewport-offset.),
+        // which configure dxil_spv_option_view_instancing (not currently exposed in ConverterOption).
         converter.set_meta_descriptor(
             dxil_spirv::binding::MetaDescriptor::DynamicViewInstancingOffsets,
             dxil_spirv::binding::MetaDescriptorKind::PushConstant,
