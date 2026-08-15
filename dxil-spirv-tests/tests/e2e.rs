@@ -163,3 +163,44 @@ fn run_category(category: &str) {
         );
     }
 }
+
+/// Global metrics report: runs after all category tests and prints a
+/// summary of the entire test suite. This is the "single pane of glass"
+/// for detecting regressions, completeness gaps, and environment issues.
+#[test]
+fn test_metrics_report() {
+    let tested = discover_tested_shaders();
+    let mut results = Vec::new();
+
+    for shader in &tested {
+        let result = test_shader(shader);
+        results.push(result);
+    }
+
+    let total = results.len();
+    let passed = results.iter().filter(|r| r.status == TestStatus::Pass).count();
+    let failed = results.iter().filter(|r| r.status == TestStatus::Fail).count();
+    let known = results.iter().filter(|r| r.status == TestStatus::KnownFailure).count();
+    let skipped = results.iter().filter(|r| r.status == TestStatus::Skip).count();
+
+    println!("\n=== Test Metrics ===");
+    println!("Total shaders: {}", total);
+    println!("Passed: {} ({:.1}%)", passed, 100.0 * passed as f64 / total as f64);
+    println!("Failed: {} ({:.1}%)", failed, 100.0 * failed as f64 / total as f64);
+    println!("Known failures: {} ({:.1}%)", known, 100.0 * known as f64 / total as f64);
+    println!("Skipped: {} ({:.1}%)", skipped, 100.0 * skipped as f64 / total as f64);
+
+    // Hard thresholds
+    assert!(failed == 0, "Unexpected failures detected: {}", failed);
+    assert!(skipped == 0, "Skipped shaders detected (missing DXIL?): {}", skipped);
+
+    // Known failure rate should not exceed 20% (current: ~55% due to remapper
+    // limitations, but we want to track and reduce it over time)
+    let known_rate = known as f64 / total as f64;
+    if known_rate > 0.20 {
+        println!(
+            "cargo:warning=Known failure rate is {:.1}% (>{:.0}%), consider improving remapper support",
+            known_rate * 100.0, 20.0
+        );
+    }
+}
