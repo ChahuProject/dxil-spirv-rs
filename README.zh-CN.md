@@ -91,10 +91,6 @@ let spirv_words = converter.compiled_spirv()?;
 | `dxil-spirv` | `dxil-spirv/` | 安全、惯用的包装器 — 你依赖的目标 |
 | `dxil-spirv-sys` | `dxil-spirv-sys/` | 原始 bindgen FFI + CMake 构建（传递链接） |
 
-## 关于 SPIRV-Cross 重复的说明
-
-本 crate 静态链接其自带的 SPIRV-Cross 副本（通过 dxil-spirv）。如果你的项目同时依赖 `spirv_cross` crate，两者将各自编译自己的 SPIRV-Cross 源码副本。这是有意为之且安全的；两个副本不会相互干扰。
-
 ## 许可证
 
 以下许可证任选其一：

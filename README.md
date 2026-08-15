@@ -91,10 +91,6 @@ let spirv_words = converter.compiled_spirv()?;
 | `dxil-spirv` | `dxil-spirv/` | Safe, idiomatic wrapper — what you depend on |
 | `dxil-spirv-sys` | `dxil-spirv-sys/` | Raw bindgen FFI + CMake build (linked transitively) |
 
-## A note on SPIRV-Cross duplication
-
-This crate statically links its own copy of SPIRV-Cross (via dxil-spirv). If your project also depends on the `spirv_cross` crate, both will compile their own copy of the SPIRV-Cross sources. This is intentional and safe; the two copies do not interfere.
-
 ## License
 
 Licensed under either of
