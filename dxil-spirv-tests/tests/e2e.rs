@@ -134,9 +134,8 @@ fn test_dxbc_detection() {
 
     // Also verify that a non-DXBC buffer is NOT misidentified as DXBC.
     let not_dxbc = b"NOT_DXBC_AT_ALL";
-    match dxil_spirv::ParsedBlob::parse(not_dxbc) {
-        Ok(_) => panic!("non-DXBC buffer should not parse successfully"),
-        Err(_) => {} // expected
+    if dxil_spirv::ParsedBlob::parse(not_dxbc).is_ok() {
+        panic!("non-DXBC buffer should not parse successfully");
     }
 }
 
