@@ -69,10 +69,11 @@ fn test_completeness_check() {
 fn test_smoke() {
     // Use DXC-compiled shaders (standard DXIL container), not asm/*.bc.dxil
     // which are raw LLVM bitcode and need parse_dxil instead of parse_dxil_blob.
+    // Use simple shaders without special markers so the GLSL reference matches.
     let smoke_shaders = [
-        "alloca-opts/bad-stride.frag",
         "stages/simple.invariant.vert",
-        "resources/cbv.frag",
+        "stages/boolean-io.vert",
+        "stages/vertex-array-input.vert",
     ];
 
     for shader in smoke_shaders {

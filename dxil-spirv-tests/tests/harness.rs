@@ -8,8 +8,8 @@ use std::fs;
 use std::path::{Path, PathBuf};
 
 use dxil_spirv::binding::{
-    Bindless, CbvVulkanBinding, D3dBinding, D3dVertexInput, ResourceClass, ResourceKind,
-    SrvVulkanBinding, UavD3dBinding, UavVulkanBinding, VulkanBinding, VulkanDescriptorType,
+    Bindless, CbvVulkanBinding, ResourceClass, ResourceKind,
+    SrvVulkanBinding, UavVulkanBinding, VulkanBinding, VulkanDescriptorType,
     VulkanShaderStageIo, VulkanShaderStageIoFlags, VulkanStreamOutput, VulkanVertexInput,
 };
 use dxil_spirv::options::ConverterOption;
@@ -78,11 +78,14 @@ fn walkdir(dir: &Path) -> Vec<PathBuf> {
 
 /// Test result for a single shader
 #[derive(Debug, Clone)]
+#[allow(dead_code)] // fields are used for debugging / future regression baseline
 pub struct ShaderTestResult {
     pub path: String,
     pub status: TestStatus,
     pub spirv_len: Option<usize>,
     pub error: Option<String>,
+    /// MD5 hex of the generated GLSL, if GLSL compilation succeeded.
+    pub glsl_md5: Option<String>,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -119,6 +122,7 @@ pub fn test_shader_in_process(shader_path: &str) -> ShaderTestResult {
             status: TestStatus::Skip,
             spirv_len: None,
             error: Some("No precompiled .dxil available".to_string()),
+            glsl_md5: None,
         };
     }
 
@@ -132,6 +136,7 @@ pub fn test_shader_in_process(shader_path: &str) -> ShaderTestResult {
             status: TestStatus::KnownFailure,
             spirv_len: None,
             error: Some(reason.to_string()),
+            glsl_md5: None,
         };
     }
 
@@ -144,6 +149,7 @@ pub fn test_shader_in_process(shader_path: &str) -> ShaderTestResult {
                 status: TestStatus::Fail,
                 spirv_len: None,
                 error: Some(format!("Failed to read DXIL: {}", e)),
+                glsl_md5: None,
             }
         }
     };
@@ -158,6 +164,7 @@ pub fn test_shader_in_process(shader_path: &str) -> ShaderTestResult {
                 status: TestStatus::Fail,
                 spirv_len: None,
                 error: Some(format!("Parse failed: {}", e)),
+                glsl_md5: None,
             }
         }
     };
@@ -170,6 +177,7 @@ pub fn test_shader_in_process(shader_path: &str) -> ShaderTestResult {
                 status: TestStatus::Fail,
                 spirv_len: None,
                 error: Some(format!("Converter creation failed: {}", e)),
+                glsl_md5: None,
             }
         }
     };
@@ -182,6 +190,7 @@ pub fn test_shader_in_process(shader_path: &str) -> ShaderTestResult {
             status: TestStatus::Fail,
             spirv_len: None,
             error: Some(format!("Configure failed: {}", e)),
+            glsl_md5: None,
         };
     }
 
@@ -191,6 +200,7 @@ pub fn test_shader_in_process(shader_path: &str) -> ShaderTestResult {
             status: TestStatus::Fail,
             spirv_len: None,
             error: Some(format!("Conversion failed: {}", e)),
+            glsl_md5: None,
         };
     }
 
@@ -202,6 +212,7 @@ pub fn test_shader_in_process(shader_path: &str) -> ShaderTestResult {
                 status: TestStatus::Fail,
                 spirv_len: None,
                 error: Some(format!("Get SPIR-V failed: {}", e)),
+                glsl_md5: None,
             }
         }
     };
@@ -213,6 +224,7 @@ pub fn test_shader_in_process(shader_path: &str) -> ShaderTestResult {
             status: TestStatus::Fail,
             spirv_len: Some(0),
             error: Some("Empty SPIR-V output".to_string()),
+            glsl_md5: None,
         };
     }
 
@@ -223,14 +235,56 @@ pub fn test_shader_in_process(shader_path: &str) -> ShaderTestResult {
             status: TestStatus::Fail,
             spirv_len: Some(spirv.len()),
             error: Some(format!("Invalid SPIR-V magic: {:#x}", spirv[0])),
+            glsl_md5: None,
         };
     }
+
+    // GLSL validation: compile SPIR-V back to GLSL and compare with the
+    // upstream reference. This is a strict check that may fail due to
+    // formatting differences (temporary variable naming, etc.) even when
+    // the conversion is functionally correct. It is intended for
+    // regression detection, not for upstream compatibility verification.
+    //
+    // Controlled by environment variable:
+    //   DXIL_SPIRV_STRICT_GLSL=1  — enable strict MD5 comparison
+    //   otherwise                 — only verify GLSL compiles, skip MD5
+    let glsl_md5 = if shader_path.contains(".noglsl.") {
+        None
+    } else if std::env::var("DXIL_SPIRV_STRICT_GLSL").is_ok() {
+        match compile_glsl_and_compare(&spirv, shader_path) {
+            Ok(md5) => Some(md5),
+            Err(e) => {
+                return ShaderTestResult {
+                    path: shader_path.to_string(),
+                    status: TestStatus::Fail,
+                    spirv_len: Some(spirv.len()),
+                    error: Some(format!("GLSL validation failed: {}", e)),
+                    glsl_md5: None,
+                };
+            }
+        }
+    } else {
+        // Non-strict mode: verify GLSL compiles but don't compare MD5
+        match compile_glsl_only(&spirv) {
+            Ok(md5) => Some(md5),
+            Err(e) => {
+                return ShaderTestResult {
+                    path: shader_path.to_string(),
+                    status: TestStatus::Fail,
+                    spirv_len: Some(spirv.len()),
+                    error: Some(format!("GLSL compilation failed: {}", e)),
+                    glsl_md5: None,
+                };
+            }
+        }
+    };
 
     ShaderTestResult {
         path: shader_path.to_string(),
         status: TestStatus::Pass,
         spirv_len: Some(spirv.len()),
         error: None,
+        glsl_md5,
     }
 }
 
@@ -835,6 +889,7 @@ pub fn test_shader(shader_path: &str) -> ShaderTestResult {
             status: TestStatus::Skip,
             spirv_len: None,
             error: Some("No precompiled .dxil available".to_string()),
+            glsl_md5: None,
         };
     }
 
@@ -866,6 +921,7 @@ pub fn test_shader(shader_path: &str) -> ShaderTestResult {
                         status,
                         spirv_len,
                         error: if error.is_empty() { None } else { Some(error) },
+                        glsl_md5: None,
                     };
                 }
             }
@@ -883,6 +939,7 @@ pub fn test_shader(shader_path: &str) -> ShaderTestResult {
                         .unwrap_or("")
                         .trim()
                 )),
+                glsl_md5: None,
             }
         }
         Err(e) => ShaderTestResult {
@@ -890,6 +947,7 @@ pub fn test_shader(shader_path: &str) -> ShaderTestResult {
             status: TestStatus::Fail,
             spirv_len: None,
             error: Some(format!("failed to spawn child: {}", e)),
+            glsl_md5: None,
         },
     }
 }
@@ -925,6 +983,91 @@ pub fn requires_complex_remapper(shader_path: &str) -> Option<&'static str> {
     } else {
         None
     }
+}
+
+/// Compile SPIR-V to GLSL and return the MD5, without comparing to a
+/// reference. Used in non-strict mode to verify the SPIR-V is valid enough
+/// for SPIRV-Cross to consume.
+fn compile_glsl_only(spirv: &[u32]) -> Result<String, String> {
+    use spirv_cross2::compile::glsl::GlslVersion;
+    use spirv_cross2::compile::CompilableTarget;
+    use spirv_cross2::targets::Glsl;
+    use spirv_cross2::{Compiler, Module};
+
+    let module = Module::from_words(spirv);
+    let compiler = Compiler::<Glsl>::new(module)
+        .map_err(|e| format!("spirv-cross2 compiler creation failed: {:?}", e))?;
+
+    let mut options = Glsl::options();
+    options.version = GlslVersion::Glsl460;
+    options.vulkan_semantics = true;
+
+    let artifact = compiler
+        .compile(&options)
+        .map_err(|e| format!("spirv-cross2 compile failed: {:?}", e))?;
+
+    let glsl: &str = artifact.as_ref();
+    let normalized = glsl.replace('\r', "");
+    Ok(format!("{:x}", md5::compute(normalized.as_bytes())))
+}
+
+/// Compile SPIR-V words to GLSL using spirv-cross2 and compare the MD5
+/// with the upstream reference.
+///
+/// Returns the MD5 hex string on match, or an error describing the mismatch.
+fn compile_glsl_and_compare(spirv: &[u32], shader_path: &str) -> Result<String, String> {
+    use spirv_cross2::compile::glsl::GlslVersion;
+    use spirv_cross2::compile::CompilableTarget;
+    use spirv_cross2::targets::Glsl;
+    use spirv_cross2::{Compiler, Module};
+
+    let module = Module::from_words(spirv);
+    let compiler = Compiler::<Glsl>::new(module)
+        .map_err(|e| format!("spirv-cross2 compiler creation failed: {:?}", e))?;
+
+    let mut options = Glsl::options();
+    options.version = GlslVersion::Glsl460;
+    options.vulkan_semantics = true;
+
+    let artifact = compiler
+        .compile(&options)
+        .map_err(|e| format!("spirv-cross2 compile failed: {:?}", e))?;
+
+    let glsl: &str = artifact.as_ref();
+
+    // Normalize line endings to Unix (upstream does the same before MD5)
+    let normalized = glsl.replace('\r', "");
+
+    // Compute MD5 of our GLSL
+    let our_md5 = format!("{:x}", md5::compute(normalized.as_bytes()));
+
+    // Read reference and compute its MD5
+    let manifest_dir = env!("CARGO_MANIFEST_DIR");
+    let workspace_root = Path::new(manifest_dir).parent().unwrap();
+    let reference_path = workspace_root
+        .join("tests/reference/shaders")
+        .join(shader_path);
+
+    if !reference_path.exists() {
+        return Err(format!(
+            "reference not found: {}",
+            reference_path.display()
+        ));
+    }
+
+    let reference_content = fs::read_to_string(&reference_path)
+        .map_err(|e| format!("failed to read reference: {}", e))?;
+    let reference_normalized = reference_content.replace('\r', "");
+    let reference_md5 = format!("{:x}", md5::compute(reference_normalized.as_bytes()));
+
+    if our_md5 != reference_md5 {
+        return Err(format!(
+            "GLSL MD5 mismatch: ours={}, reference={}",
+            our_md5, reference_md5
+        ));
+    }
+
+    Ok(our_md5)
 }
 
 /// Check if a resource kind is a buffer type (structured, raw, typed).

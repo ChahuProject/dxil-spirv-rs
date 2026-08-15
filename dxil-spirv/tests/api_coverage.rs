@@ -76,7 +76,7 @@ fn extract_upstream_exports(header_text: &str) -> BTreeSet<String> {
             let before_paren = &line[..paren_pos];
             // Walk backwards from the end to find the function name.
             if let Some(name_start) = before_paren.rfind("dxil_spv_") {
-                let name = before_paren[name_start..].trim_end_matches(|c: char| c == '*' || c == ' ');
+                let name = before_paren[name_start..].trim_end_matches(['*', ' ']);
                 if !name.is_empty() {
                     exports.insert(name.to_string());
                 }

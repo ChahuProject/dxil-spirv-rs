@@ -12,8 +12,8 @@ publish = false
 dxil-spirv = { path = "../dxil-spirv" }
 
 [dev-dependencies]
-# spirv-cross2 will be added here for GLSL validation
-# walkdir = "2"  # Avoiding external deps for now
+spirv-cross2 = "0.7.1"
+md5 = "0.7"
 
 [build-dependencies]
 ureq = { version = "2", default-features = false, features = ["tls"] }
