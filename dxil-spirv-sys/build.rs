@@ -104,6 +104,18 @@ fn link_static(dst: &Path) {
     ] {
         println!("cargo:rustc-link-lib=static={lib}");
     }
+
+    // The upstream C++ core uses operator new/delete, RTTI, exceptions and
+    // std:: containers, so the final link needs the C++ standard library.
+    // rustc does not add it automatically when linking a C static library, so
+    // request it explicitly per platform. MSVC links the C++ runtime through
+    // the CRT already, so this is only needed for GCC/Clang targets.
+    match env::var("CARGO_CFG_TARGET_OS").as_deref() {
+        Ok("macos") => println!("cargo:rustc-link-lib=dylib=c++"),
+        // Linux, the BSDs, and other GNU/ELF Unix-likes use libstdc++.
+        Ok(os) if os != "windows" => println!("cargo:rustc-link-lib=dylib=stdc++"),
+        _ => {}
+    }
 }
 
 /// Recursively walk `dir` and register any directory containing static library
