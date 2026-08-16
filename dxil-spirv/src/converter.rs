@@ -130,7 +130,14 @@ impl Converter {
     /// by the linked library.
     pub fn add_option(&mut self, option: &ConverterOption) -> Result<()> {
         if !option.is_supported() {
-            return Err(Error::UnsupportedFeature(option.kind() as u32));
+            // bindgen emits `dxil_spv_option` as `c_int` on some platforms and
+            // `c_uint` on others (the upstream header has no negative
+            // enumerators). Normalize to `u32` via a widening cast. The cast
+            // is a no-op on `c_uint` targets, so allow the same-type-cast lint
+            // there while keeping it meaningful on `c_int` targets.
+            #[allow(clippy::unnecessary_cast)]
+            let kind = option.kind() as u32;
+            return Err(Error::UnsupportedFeature(kind));
         }
         let (_base, data) = option.to_raw();
         let base = data.as_base();
