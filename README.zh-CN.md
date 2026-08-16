@@ -85,6 +85,10 @@ let spirv_words = converter.compiled_spirv()?;
 
 完整故事，逐里程碑带提交记录：[docs/changelog.md](https://github.com/ChahuProject/dxil-spirv-rs/blob/main/docs/changelog.md)。
 
+## 致谢
+
+感谢 [StarBobis](https://github.com/StarBobis) 提供创建本项目所使用的 AI token。
+
 ## 许可证
 
 以下许可证任选其一：

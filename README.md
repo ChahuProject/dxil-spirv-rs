@@ -100,6 +100,11 @@ flow, code conventions, and the AI-maintenance policy.
 
 The full story, milestone by milestone with commits: [docs/changelog.md](https://github.com/ChahuProject/dxil-spirv-rs/blob/main/docs/changelog.md).
 
+## Thanks
+
+Thanks to [StarBobis](https://github.com/StarBobis) for providing the AI token
+used to create this project.
+
 ## License
 
 Licensed under either of
