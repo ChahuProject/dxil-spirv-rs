@@ -176,42 +176,54 @@ fn build_vec4_wrapper_type(
 ) -> Result<(u32, u32), HlslCompatError> {
     let len = array_len / 4;
     let len_const = alloc.alloc();
-    let vec4_type = match find_vec4_of(module, scalar_type) {
-        Some(t) => t,
-        None => {
-            let t = alloc.alloc();
-            let inst = Instruction::new(
-                Op::TypeVector,
-                None,
-                Some(t),
-                vec![Operand::IdRef(scalar_type), Operand::LiteralBit32(4)],
-            );
-            module.types_global_values.insert(var_pos, inst);
-            t
-        }
-    };
     let array_type = alloc.alloc();
     let struct_type = alloc.alloc();
     let pointer_type = alloc.alloc();
 
-    // Insert in dependency order right before the variable: length constant
-    // must precede the array type; the vector may have been inserted above.
+    // Locate (or prepare) the vec4 component type. It must be *defined before*
+    // the TypeArray that references it — SPIR-V forbids forward references in
+    // the type system. When the module has no `float4` yet (lone scalar view),
+    // the TypeVector is inserted *last* below so it ends up first in the
+    // emitted sequence. When it exists but is declared *after* the variable
+    // (common in dxil-spirv output), it is moved to the front of the inserted
+    // run for the same reason.
+    let mut insert_vec4: Option<u32> = None;
+    let mut vec4_to_move: Option<Instruction> = None;
+    let vec4_type = match find_vec4_of(module, scalar_type) {
+        Some(t) => {
+            if let Some(p) = module.types_global_values.iter().position(|i| i.result_id == Some(t)) {
+                if p > var_pos {
+                    // Move the existing TypeVector before the variable so the
+                    // newly inserted TypeArray (which references it) stays
+                    // definition-before-use. Moving earlier can never break
+                    // other references.
+                    vec4_to_move = Some(module.types_global_values.remove(p));
+                }
+            }
+            t
+        }
+        None => {
+            let t = alloc.alloc();
+            insert_vec4 = Some(t);
+            t
+        }
+    };
+
+    // `Vec::insert(var_pos, x)` puts `x` at `var_pos` and shifts everything
+    // from `var_pos` on one slot to the right — so inserting in *reverse*
+    // dependency order yields the desired forward order:
+    //   [vec4?, Constant, TypeArray, TypeStruct, TypePointer, var, ...]
+    // with the optional TypeVector inserted last (== first in the sequence).
     module.types_global_values.insert(
         var_pos,
         Instruction::new(
-            Op::Constant,
-            Some(u32_type),
-            Some(len_const),
-            vec![Operand::IdRef(len)],
-        ),
-    );
-    module.types_global_values.insert(
-        var_pos,
-        Instruction::new(
-            Op::TypeArray,
+            Op::TypePointer,
             None,
-            Some(array_type),
-            vec![Operand::IdRef(vec4_type), Operand::IdRef(len_const)],
+            Some(pointer_type),
+            vec![
+                Operand::StorageClass(StorageClass::Uniform),
+                Operand::IdRef(struct_type),
+            ],
         ),
     );
     module.types_global_values.insert(
@@ -226,15 +238,34 @@ fn build_vec4_wrapper_type(
     module.types_global_values.insert(
         var_pos,
         Instruction::new(
-            Op::TypePointer,
+            Op::TypeArray,
             None,
-            Some(pointer_type),
-            vec![
-                Operand::StorageClass(StorageClass::Uniform),
-                Operand::IdRef(struct_type),
-            ],
+            Some(array_type),
+            vec![Operand::IdRef(vec4_type), Operand::IdRef(len_const)],
         ),
     );
+    module.types_global_values.insert(
+        var_pos,
+        Instruction::new(
+            Op::Constant,
+            Some(u32_type),
+            Some(len_const),
+            vec![Operand::IdRef(len)],
+        ),
+    );
+    if let Some(t) = insert_vec4 {
+        module.types_global_values.insert(
+            var_pos,
+            Instruction::new(
+                Op::TypeVector,
+                None,
+                Some(t),
+                vec![Operand::IdRef(scalar_type), Operand::LiteralBit32(4)],
+            ),
+        );
+    } else if let Some(inst) = vec4_to_move {
+        module.types_global_values.insert(var_pos, inst);
+    }
 
     // Block on the new struct, ArrayStride 16 on the new array, member
     // Offset 0 on the new struct.

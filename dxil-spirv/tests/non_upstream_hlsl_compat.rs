@@ -16,6 +16,8 @@
 
 #![cfg(feature = "non-upstream-hlsl-compat")]
 
+use std::collections::HashMap;
+
 use dxil_spirv::non_upstream::hlsl_compat::{self, ir as hc_ir};
 use rspirv::binary::Assemble;
 use rspirv::dr::{Builder, Operand};
@@ -107,6 +109,52 @@ fn build_single_view_static() -> (Vec<u32>, u32) {
     let s = b.type_struct(vec![arr]);
     let ptr = b.type_pointer(None, StorageClass::Uniform, s);
     let var = b.variable(ptr, None, StorageClass::Uniform, None);
+
+    b.decorate(s, Decoration::Block, []);
+    b.member_decorate(s, 0, Decoration::Offset, [Operand::LiteralBit32(0)]);
+    b.decorate(arr, Decoration::ArrayStride, [Operand::LiteralBit32(4)]);
+    b.decorate(var, Decoration::DescriptorSet, [Operand::LiteralBit32(0)]);
+    b.decorate(var, Decoration::Binding, [Operand::LiteralBit32(0)]);
+
+    let ftype = b.type_function(void, vec![]);
+    b.begin_function(void, None, FunctionControl::NONE, ftype)
+        .unwrap();
+    b.begin_block(None).unwrap();
+    let ptr_f32 = b.type_pointer(None, StorageClass::Uniform, f32);
+    let ac = b
+        .access_chain(ptr_f32, None, var, [c0, c5])
+        .unwrap();
+    let _ = b.load(f32, None, ac, None, []).unwrap();
+    b.ret().unwrap();
+    b.end_function().unwrap();
+
+    (b.module().clone().assemble(), var)
+}
+
+/// Builds a module with a lone scalar view whose `float4` type exists but is
+/// declared **after** the cbuffer variable — the shape dxil-spirv actually
+/// emits. The rewrite must move such a TypeVector before the newly inserted
+/// TypeArray (definition-before-use).
+fn build_vec4_declared_after_var() -> (Vec<u32>, u32) {
+    let mut b = Builder::new();
+    b.memory_model(AddressingModel::Logical, MemoryModel::GLSL450);
+
+    let void = b.type_void();
+    let f32 = b.type_float(32, None);
+    let u32 = b.type_int(32, 0);
+    let c0 = b.constant_bit32(u32, 0);
+    let c5 = b.constant_bit32(u32, 5);
+    let c8 = b.constant_bit32(u32, 8);
+
+    let arr = b.type_array(f32, c8);
+    let s = b.type_struct(vec![arr]);
+    let ptr = b.type_pointer(None, StorageClass::Uniform, s);
+    let var = b.variable(ptr, None, StorageClass::Uniform, None);
+
+    // The float4 type is created *after* the variable on purpose: builder
+    // appends type instructions in call order, so the TypeVector lands after
+    // the OpVariable in types_global_values.
+    let _vec4 = b.type_vector(f32, 4);
 
     b.decorate(s, Decoration::Block, []);
     b.member_decorate(s, 0, Decoration::Offset, [Operand::LiteralBit32(0)]);
@@ -296,6 +344,111 @@ fn in_place_rewrite_static_index() {
         .map(|i| constant_value(&module, *i).unwrap_or(u32::MAX))
         .collect();
     assert_eq!(values, vec![0, 1, 1], "static [0, 5] split into [0, 5/4, 5%4]");
+}
+
+/// Regression: with a **lone** scalar view the module may have no `float4`
+/// type yet, so the pass must insert a fresh `OpTypeVector`. It must be
+/// emitted *before* the `OpTypeArray` that references it — SPIR-V forbids
+/// forward references in the type system, and spirv-cross's parser rejects
+/// (asserts on) such modules. This test pins the definition-before-use
+/// ordering of every type/constant in the rewritten module.
+#[test]
+fn in_place_rewrite_types_defined_before_use() {
+    let (words, _) = build_single_view_static();
+    let out = hlsl_compat::vec4_align_cbuffers(&words).expect("pass");
+
+    let module = parse(&out.spirv);
+    let mut pos: HashMap<u32, usize> = HashMap::new();
+    let mut type_arrays: Vec<(usize, u32, u32)> = Vec::new(); // (pos, component_id, length_id)
+    for (i, inst) in module.types_global_values.iter().enumerate() {
+        if let Some(id) = inst.result_id {
+            pos.insert(id, i);
+        }
+        if inst.class.opcode == Op::TypeArray {
+            let component = match inst.operands.first() {
+                Some(Operand::IdRef(v)) => *v,
+                _ => 0,
+            };
+            let len = match inst.operands.get(1) {
+                Some(Operand::IdRef(v)) => *v,
+                _ => 0,
+            };
+            type_arrays.push((i, component, len));
+        }
+    }
+    assert!(!type_arrays.is_empty(), "rewrite must emit a TypeArray");
+
+    for (array_pos, component_id, len_id) in type_arrays {
+        let component_pos = pos.get(&component_id).copied().expect("component type defined");
+        assert!(
+            component_pos < array_pos,
+            "component type (id {component_id}) must precede its TypeArray at {array_pos}"
+        );
+        let len_pos = pos.get(&len_id).copied().expect("length constant defined");
+        assert!(
+            len_pos < array_pos,
+            "length constant (id {len_id}) must precede its TypeArray at {array_pos}"
+        );
+    }
+}
+
+/// Regression: dxil-spirv output commonly declares the `float4` type *after*
+/// the cbuffer variable. The in-place rewrite must move such a TypeVector
+/// before the newly inserted TypeArray — otherwise the module contains a
+/// forward-referenced type and spirv-cross rejects it (parse failure /
+/// `assert(0)` in mark_used_as_array_length).
+#[test]
+fn in_place_rewrite_moves_vec4_declared_after_variable() {
+    let (words, var_id) = build_vec4_declared_after_var();
+    let out = hlsl_compat::vec4_align_cbuffers(&words).expect("pass");
+    assert_eq!(out.rewritten, 1);
+
+    let module = parse(&out.spirv);
+    // The variable must still be bound to the new vec4 wrapper.
+    let info = hc_ir::analyze(&module);
+    let var = info
+        .variables
+        .iter()
+        .find(|v| v.id == var_id)
+        .expect("variable still present");
+    let members = info.struct_members.get(&var.struct_type).expect("members");
+    assert_eq!(members.len(), 1);
+    let (elem, _) = info.array_info.get(&members[0]).expect("array");
+    assert!(info.is_vec4_of_32(*elem), "element is float4");
+
+    // Definition-before-use: every TypeArray's component and length must be
+    // defined before the TypeArray itself.
+    let mut pos: HashMap<u32, usize> = HashMap::new();
+    let mut type_arrays: Vec<(usize, u32, u32)> = Vec::new();
+    for (i, inst) in module.types_global_values.iter().enumerate() {
+        if let Some(id) = inst.result_id {
+            pos.insert(id, i);
+        }
+        if inst.class.opcode == Op::TypeArray {
+            let component = match inst.operands.first() {
+                Some(Operand::IdRef(v)) => *v,
+                _ => 0,
+            };
+            let len = match inst.operands.get(1) {
+                Some(Operand::IdRef(v)) => *v,
+                _ => 0,
+            };
+            type_arrays.push((i, component, len));
+        }
+    }
+    assert!(!type_arrays.is_empty(), "rewrite must emit a TypeArray");
+    for (array_pos, component_id, len_id) in type_arrays {
+        let component_pos = pos.get(&component_id).copied().expect("component type defined");
+        assert!(
+            component_pos < array_pos,
+            "component type (id {component_id}) must precede its TypeArray at {array_pos}"
+        );
+        let len_pos = pos.get(&len_id).copied().expect("length constant defined");
+        assert!(
+            len_pos < array_pos,
+            "length constant (id {len_id}) must precede its TypeArray at {array_pos}"
+        );
+    }
 }
 
 #[test]
