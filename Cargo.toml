@@ -16,7 +16,7 @@ license = "MIT OR Apache-2.0"
 repository = "https://github.com/ChahuProject/dxil-spirv-rs"
 homepage = "https://github.com/ChahuProject/dxil-spirv-rs"
 keywords = ["dxil", "spirv", "d3d12", "shader", "decompile"]
-categories = ["graphics", "ffi", "parser"]
+categories = ["graphics", "rendering", "parser-implementations"]
 
 [profile.release]
 lto = true

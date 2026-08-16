@@ -9,6 +9,7 @@ repository.workspace = true
 homepage.workspace = true
 keywords = ["dxil", "spirv", "ffi", "bindings"]
 categories = ["external-ffi-bindings", "graphics"]
+readme = "../README.md"
 build = "build.rs"
 links = "dxil-spirv-c"
 
