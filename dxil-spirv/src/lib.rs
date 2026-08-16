@@ -17,6 +17,13 @@
 
 #![forbid(unsafe_op_in_unsafe_fn)]
 #![warn(missing_docs)]
+// The raw FFI structs use bindgen-generated enums whose signedness differs
+// across platforms (`c_int` vs `c_uint`) depending on whether the C header has
+// negative enumerators. Converting those into the safe layer's fixed `u32`
+// fields is therefore a real cast on some platforms and a no-op on others.
+// `clippy::unnecessary_cast` would fire on the no-op case, so allow it crate-
+// wide: every such cast is a deliberate, platform-normalizing conversion.
+#![allow(clippy::unnecessary_cast)]
 
 pub mod binding;
 mod converter;
