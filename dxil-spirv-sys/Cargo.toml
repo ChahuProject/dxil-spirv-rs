@@ -12,6 +12,27 @@ categories = ["external-ffi-bindings", "graphics"]
 build = "build.rs"
 links = "dxil-spirv-c"
 
+# The crate ships the full vendored upstream source tree (CMake compiles it at
+# build time). Exclude everything that is NOT needed to compile:
+#   - shaders/        : upstream HLSL test shaders (only used by dxil-spirv-tests)
+#   - reference*/     : upstream GLSL reference outputs (only used by tests)
+#   - misc/           : CLI test apps (DXIL_SPV_MISC_CLI=OFF; we build only
+#                       dxil-spirv-c-static, which does not depend on them)
+#   - DESCRIPTORS.md  : upstream dev doc
+#   - .git*           : VCS metadata
+# Note: third_party/* and subprojects/* MUST stay — the top-level CMakeLists
+# add_subdirectory()s them unconditionally during configure.
+exclude = [
+    "dxil-spirv/shaders/**",
+    "dxil-spirv/reference/**",
+    "dxil-spirv/reference-dxbc/**",
+    "dxil-spirv/misc/**",
+    "dxil-spirv/DESCRIPTORS.md",
+    "dxil-spirv/.gitattributes",
+    "dxil-spirv/.gitignore",
+    "dxil-spirv/.gitmodules",
+]
+
 [build-dependencies]
 cmake = "0.1"
 bindgen = "0.72"
