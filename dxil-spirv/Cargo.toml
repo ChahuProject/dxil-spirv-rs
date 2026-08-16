@@ -11,6 +11,18 @@ keywords.workspace = true
 categories.workspace = true
 readme = "../README.md"
 
+[features]
+# NON-UPSTREAM EXTENSION (default off): see `non_upstream` module docs.
+# Enables SPIR-V post-processing that is not part of upstream dxil-spirv.
+non-upstream-hlsl-compat = ["dep:rspirv"]
+
+# NON-UPSTREAM extension tests (see tests/non_upstream_hlsl_compat.rs).
+[[test]]
+name = "non_upstream_hlsl_compat"
+path = "tests/non_upstream_hlsl_compat.rs"
+required-features = ["non-upstream-hlsl-compat"]
+
 [dependencies]
 dxil-spirv-sys = { path = "../dxil-spirv-sys", version = "0.1.0" }
+rspirv = { version = "0.13", optional = true }
 thiserror = "2"

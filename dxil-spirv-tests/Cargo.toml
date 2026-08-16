@@ -8,6 +8,10 @@ repository.workspace = true
 homepage.workspace = true
 publish = false
 
+[features]
+# Forwards the dxil-spirv NON-UPSTREAM feature into the test crate.
+non-upstream-hlsl-compat = ["dxil-spirv/non-upstream-hlsl-compat"]
+
 [dependencies]
 dxil-spirv = { path = "../dxil-spirv" }
 
@@ -19,3 +23,10 @@ serde_json = "1"
 [build-dependencies]
 ureq = { version = "2", default-features = false, features = ["tls"] }
 zip = { version = "8", default-features = false, features = ["deflate"] }
+
+# NON-UPSTREAM extension tests (see tests/non_upstream/). Kept out of the
+# default `cargo test` run; enable the feature to include them.
+[[test]]
+name = "non_upstream_hlsl_compat_e2e"
+path = "tests/non_upstream/hlsl_compat_e2e.rs"
+required-features = ["non-upstream-hlsl-compat"]

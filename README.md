@@ -60,6 +60,20 @@ let spirv_words = converter.compiled_spirv()?;
 **Full usage guide**: [docs/usage.md](https://github.com/ChahuProject/dxil-spirv-rs/blob/main/docs/usage.md) — every converter option,
 remapper configuration, error handling, and platform notes.
 
+## Non-upstream extensions
+
+dxil-spirv-rs additionally ships **non-upstream extensions** — functionality
+that is **not** part of upstream dxil-spirv, compiled only when explicitly
+opted in via cargo features:
+
+| Feature | Purpose | Docs |
+|---|---|---|
+| `non-upstream-hlsl-compat` (off by default) | Post-processes converted SPIR-V so cbuffers that upstream emits as stride-4 scalar arrays (`float[N]`, which the spirv-cross2 **HLSL** backend cannot express) are vec4-aligned (`float4[N/4]`), raising HLSL decompilation success on real shaders from ~74–92% failure to ~0% for this failure class. GLSL/MSL output is unaffected (semantics-preserving; verified across all 810 shaders with zero GLSL regressions). | [docs/non-upstream/hlsl-compat-rationale.md](https://github.com/ChahuProject/dxil-spirv-rs/blob/main/docs/non-upstream/hlsl-compat-rationale.md) |
+
+Extensions live under `dxil_spirv::non_upstream::*` and are fully isolated
+from the upstream-facing API: separate module, separate error types, separate
+tests, and zero effect on default builds.
+
 ## Developing this crate (for developers)
 
 This crate is a `-sys` + safe-layer split that compiles the vendored upstream

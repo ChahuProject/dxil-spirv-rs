@@ -4,6 +4,7 @@ members = [
     "dxil-spirv",
     "dxil-spirv-sys",
     "dxil-spirv-tests",
+    "tools/hlsl-compat-inspect",
 ]
 
 [workspace.package]

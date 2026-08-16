@@ -33,6 +33,14 @@ mod parsed_blob;
 mod remapper;
 mod stage;
 
+/// NON-UPSTREAM EXTENSION — additional functionality that is **not** part of
+/// upstream dxil-spirv, provided by this crate on top of the converted output.
+///
+/// This module only exists when the `non-upstream-hlsl-compat` feature is
+/// enabled (it is disabled by default). See the module docs for details.
+#[cfg(feature = "non-upstream-hlsl-compat")]
+pub mod non_upstream;
+
 pub use converter::Converter;
 pub use error::{Error, Result};
 pub use parsed_blob::ParsedBlob;
