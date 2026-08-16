@@ -18,7 +18,7 @@ This project is **AI-maintained**: it was created by the **Kimi K3** model, and
 AI-generated and AI-edited code is explicitly welcome and is the normal way
 this project evolves. Human direction and review are applied throughout; the
 AI follows the same standards as any human contributor. See the
-[AI-maintenance policy](docs/contributing.md) for details.
+[AI-maintenance policy](https://github.com/ChahuProject/dxil-spirv-rs/blob/main/docs/contributing.md) for details.
 
 ## Using this crate (for users)
 
@@ -57,7 +57,7 @@ converter.run()?;
 let spirv_words = converter.compiled_spirv()?;
 ```
 
-**Full usage guide**: [docs/usage.md](docs/usage.md) — every converter option,
+**Full usage guide**: [docs/usage.md](https://github.com/ChahuProject/dxil-spirv-rs/blob/main/docs/usage.md) — every converter option,
 remapper configuration, error handling, and platform notes.
 
 ## Developing this crate (for developers)
@@ -76,17 +76,17 @@ The safe wrapper exposes **all** functions from the upstream C API
 (`dxil-spirv/tests/api_coverage.rs`) that fails if upstream adds functions we
 haven't wrapped.
 
-**Start here**: [docs/architecture.md](docs/architecture.md) — crate topology,
+**Start here**: [docs/architecture.md](https://github.com/ChahuProject/dxil-spirv-rs/blob/main/docs/architecture.md) — crate topology,
 FFI boundary rules, static link closure, and the cross-platform pitfall ledger
 (the paid-for lessons about CMake, bindgen, and C++ linking).
 
-**Testing**: [docs/testing.md](docs/testing.md) — how the 829-shader suite
+**Testing**: [docs/testing.md](https://github.com/ChahuProject/dxil-spirv-rs/blob/main/docs/testing.md) — how the 829-shader suite
 works, regression baseline mechanics, and how to add tests.
 
-**CI**: [docs/ci.md](docs/ci.md) — job layout, platform strategy, and the
+**CI**: [docs/ci.md](https://github.com/ChahuProject/dxil-spirv-rs/blob/main/docs/ci.md) — job layout, platform strategy, and the
 caching pitfalls that shaped it.
 
-**Contribute**: [docs/contributing.md](docs/contributing.md) — contribution
+**Contribute**: [docs/contributing.md](https://github.com/ChahuProject/dxil-spirv-rs/blob/main/docs/contributing.md) — contribution
 flow, code conventions, and the AI-maintenance policy.
 
 ## What we did (project history)
@@ -98,7 +98,7 @@ flow, code conventions, and the AI-maintenance policy.
 - **100% pass rate** — 76.2% → 98.9% → **829/829 (100%)** by completing the upstream option/remapper surface.
 - **Edition 2024 + cross-platform CI** — rustfmt, MSRV 1.85, CI green on Windows / Linux / macOS.
 
-The full story, milestone by milestone with commits: [docs/changelog.md](docs/changelog.md).
+The full story, milestone by milestone with commits: [docs/changelog.md](https://github.com/ChahuProject/dxil-spirv-rs/blob/main/docs/changelog.md).
 
 ## License
 

@@ -14,7 +14,7 @@ DXBC / DXIL 容器 ──dxil-spirv──▶ SPIR-V ──SPIRV-Cross──▶ H
 
 ## AI 维护声明
 
-本项目由 **AI 维护**：它由 **Kimi K3** 模型创建，AI 生成与 AI 编辑的代码是被明确欢迎的，也是本项目演进的常态。全程有人类方向的把控与审查；AI 遵守与人类贡献者完全相同的标准。详见 [AI 维护政策](docs/contributing.md)。
+本项目由 **AI 维护**：它由 **Kimi K3** 模型创建，AI 生成与 AI 编辑的代码是被明确欢迎的，也是本项目演进的常态。全程有人类方向的把控与审查；AI 遵守与人类贡献者完全相同的标准。详见 [AI 维护政策](https://github.com/ChahuProject/dxil-spirv-rs/blob/main/docs/contributing.md)。
 
 ## 使用本 crate（给使用者）
 
@@ -52,7 +52,7 @@ converter.run()?;
 let spirv_words = converter.compiled_spirv()?;
 ```
 
-**完整使用指南**：[docs/usage.md](docs/usage.md) — 每个转换器选项、重映射配置、错误处理与平台注意事项。
+**完整使用指南**：[docs/usage.md](https://github.com/ChahuProject/dxil-spirv-rs/blob/main/docs/usage.md) — 每个转换器选项、重映射配置、错误处理与平台注意事项。
 
 ## 开发本 crate（给开发者）
 
@@ -66,13 +66,13 @@ let spirv_words = converter.compiled_spirv()?;
 
 安全包装器暴露了上游 C API（`dxil_spv_*`）的**所有**函数 — 由编译期测试（`dxil-spirv/tests/api_coverage.rs`）强制保证，上游新增函数未包装即失败。
 
-**从这里开始**：[docs/architecture.md](docs/architecture.md) — crate 拓扑、FFI 边界规则、静态链接闭包，以及跨平台踩坑实录（CMake、bindgen、C++ 链接的付费教训）。
+**从这里开始**：[docs/architecture.md](https://github.com/ChahuProject/dxil-spirv-rs/blob/main/docs/architecture.md) — crate 拓扑、FFI 边界规则、静态链接闭包，以及跨平台踩坑实录（CMake、bindgen、C++ 链接的付费教训）。
 
-**测试**：[docs/testing.md](docs/testing.md) — 829 个着色器套件如何工作、回归基线机制、如何添加测试。
+**测试**：[docs/testing.md](https://github.com/ChahuProject/dxil-spirv-rs/blob/main/docs/testing.md) — 829 个着色器套件如何工作、回归基线机制、如何添加测试。
 
-**CI**：[docs/ci.md](docs/ci.md) — job 布局、平台策略、以及塑造它的缓存教训。
+**CI**：[docs/ci.md](https://github.com/ChahuProject/dxil-spirv-rs/blob/main/docs/ci.md) — job 布局、平台策略、以及塑造它的缓存教训。
 
-**贡献**：[docs/contributing.md](docs/contributing.md) — 贡献流程、代码规范、AI 维护政策。
+**贡献**：[docs/contributing.md](https://github.com/ChahuProject/dxil-spirv-rs/blob/main/docs/contributing.md) — 贡献流程、代码规范、AI 维护政策。
 
 ## 我们做了什么（项目历程）
 
@@ -83,7 +83,7 @@ let spirv_words = converter.compiled_spirv()?;
 - **100% 通过率** — 76.2% → 98.9% → **829/829（100%）**，通过补全上游选项/重映射表面达成。
 - **Edition 2024 + 跨平台 CI** — rustfmt、MSRV 1.85、CI 在 Windows / Linux / macOS 全绿。
 
-完整故事，逐里程碑带提交记录：[docs/changelog.md](docs/changelog.md)。
+完整故事，逐里程碑带提交记录：[docs/changelog.md](https://github.com/ChahuProject/dxil-spirv-rs/blob/main/docs/changelog.md)。
 
 ## 许可证
 
