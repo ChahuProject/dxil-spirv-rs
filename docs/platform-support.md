@@ -1,5 +1,7 @@
 # Platform Support
 
+[English](platform-support.md) | [中文](platform-support.zh-CN.md)
+
 `dxil-spirv-rs` wraps the upstream `dxil-spirv` C++ library (built from source via
 CMake) and exposes a safe Rust API. Because the C++ core is compiled locally, the
 crate works on any platform that has a working C++17 toolchain and CMake.

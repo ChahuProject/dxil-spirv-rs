@@ -1,5 +1,7 @@
 # Testing Architecture
 
+[English](testing.md) | [中文](testing.zh-CN.md)
+
 This document describes the testing architecture for `dxil-spirv-rs`, including coverage guarantees, test harness design, shader configuration markers, and regression baseline mechanics.
 
 ## Coverage Guarantee

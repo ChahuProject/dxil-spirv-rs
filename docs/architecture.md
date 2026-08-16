@@ -1,5 +1,7 @@
 # Developer Architecture
 
+[English](architecture.md) | [中文](architecture.zh-CN.md)
+
 This document describes the internal architecture of `dxil-spirv-rs`, including crate topology, the native build and static linking pipeline, FFI boundary rules, lifetime management patterns, thread safety contracts, test harness infrastructure, and recorded platform lessons.
 
 ## 1. Crate Topology

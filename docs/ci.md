@@ -1,5 +1,7 @@
 # CI Architecture
 
+[English](ci.md) | [中文](ci.zh-CN.md)
+
 This document describes the Continuous Integration (CI) architecture for `dxil-spirv-rs`, defined in `.github/workflows/ci.yml`. It details the job topology, platform verification strategy, caching policies, local pre-push validation, and the historical ledger of CI pitfalls and resolutions.
 
 For platform requirements and supported target triples, see [platform-support.md](platform-support.md). For test suite mechanics and shader coverage metrics, see [testing.md](testing.md).

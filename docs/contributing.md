@@ -1,5 +1,7 @@
 # Contributing to dxil-spirv-rs
 
+[English](contributing.md) | [中文](contributing.zh-CN.md)
+
 Welcome to dxil-spirv-rs. This project provides safe Rust bindings for the upstream dxil-spirv C++ library, converting DXBC container and DXIL bitcode into SPIR-V. We welcome contributions from human developers and AI coding agents alike.
 
 ## AI-Maintenance Policy

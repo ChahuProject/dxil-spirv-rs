@@ -1,23 +1,23 @@
-# Usage Guide
+# 使用指南
 
 [English](usage.md) | [中文](usage.zh-CN.md)
 
-`dxil-spirv` provides safe Rust bindings to `dxil-spirv`. It converts Direct3D shader bytecode (DXBC containers and raw DXIL bitcode) into SPIR-V words for Vulkan tooling or downstream cross-compilation with SPIRV-Cross.
+`dxil-spirv` 提供对 `dxil-spirv` 的安全 Rust 绑定。它将 Direct3D 着色器字节码（DXBC 容器和原始 DXIL bitcode）转换为 SPIR-V word，供 Vulkan 工具链或下游使用 SPIRV-Cross 进行交叉编译。
 
-## Adding the Dependency
+## 添加依赖
 
-Add `dxil-spirv` to your `Cargo.toml`:
+在 `Cargo.toml` 中添加 `dxil-spirv`：
 
 ```toml
 [dependencies]
 dxil-spirv = "0.1"
 ```
 
-The crate builds the vendored C++ core during compilation. You'll need a C++17 compiler and CMake available in your build environment. See [platform-support.md](platform-support.md) for full toolchain requirements across Windows, Linux, and macOS.
+该 crate 在编译期间构建内置的 C++ 核心。你的构建环境中需要具备 C++17 编译器和 CMake。关于 Windows、Linux 和 macOS 上的完整工具链要求，参见 [platform-support.md](platform-support.zh-CN.md)。
 
-## Quick Start
+## 快速开始
 
-For basic conversions where default settings are sufficient, use `convert_to_spirv`.
+对于默认设置即可满足需求的基础转换，使用 `convert_to_spirv`。
 
 ```rust
 use dxil_spirv::Result;
@@ -35,19 +35,19 @@ fn main() -> Result<()> {
 }
 ```
 
-The one-shot function auto-detects whether the input buffer is a DXBC container (Shader Model 4, 5, or 6) or raw DXIL bitcode. It produces little-endian `u32` words matching standard SPIR-V layout.
+该单次转换函数会自动检测输入缓冲区是 DXBC 容器（Shader Model 4、5 或 6）还是原始 DXIL bitcode。它生成符合标准 SPIR-V 布局的小端序 `u32` word。
 
-## The Staged Conversion Pipeline
+## 分阶段转换管线
 
-When you need to inspect entry points, tune translation options, or remap bindings, drive the stages explicitly.
+当需要检查 entry point、调整翻译选项或重映射 binding 时，可以显式分阶段驱动。
 
 ```text
 Bytecode Slice -> ParsedBlob -> Converter -> SPIR-V Words
 ```
 
-### 1. Parsing and Introspection (`ParsedBlob`)
+### 1. 解析与内省（`ParsedBlob`）
 
-`ParsedBlob` parses the binary blob and holds the decoded shader model representation.
+`ParsedBlob` 用于解析二进制 blob 并持有解码后的 shader model 表示。
 
 ```rust
 use dxil_spirv::{ParsedBlob, Result, ShaderStage};
@@ -75,11 +75,11 @@ fn main() -> Result<()> {
 }
 ```
 
-If your shader blob had reflection metadata stripped into a companion file, use `ParsedBlob::parse_reflection` to load the companion metadata.
+如果着色器 blob 的反射元数据被分离到了附属文件中，可使用 `ParsedBlob::parse_reflection` 加载附属元数据。
 
-### 2. Configuring the Converter (`Converter`)
+### 2. 配置转换器（`Converter`）
 
-Create a `Converter` from the `ParsedBlob`. Configure target options, register remapping callbacks, and choose the entry point before conversion.
+从 `ParsedBlob` 创建 `Converter`。在转换前配置目标选项、注册重映射回调并选择 entry point。
 
 ```rust
 use dxil_spirv::options::ConverterOption;
@@ -113,13 +113,13 @@ fn main() -> Result<()> {
 }
 ```
 
-## Configuration and Remapping
+## 配置与重映射
 
-Upstream Direct3D shaders organize resources into register spaces (`t0`, `u0`, `b0`, `s0`), while Vulkan uses descriptor sets and binding indices (`set = X, binding = Y`). `dxil-spirv` provides comprehensive controls to customize this mapping.
+上游 Direct3D 着色器将资源组织在寄存器空间（`t0`、`u0`、`b0`、`s0`）中，而 Vulkan 使用 descriptor set 和 binding 索引（`set = X, binding = Y`）。`dxil-spirv` 提供了完善的控制机制来自定义这一映射。
 
-### Converter Options
+### 转换器选项
 
-`ConverterOption` covers all code generation toggles supported by the compiler. Check feature availability at runtime using `ConverterOption::is_supported`.
+`ConverterOption` 涵盖了编译器支持的所有代码生成开关。可以在运行时通过 `ConverterOption::is_supported` 检查特性可用性。
 
 ```rust
 use dxil_spirv::options::{ConverterOption, ShaderQuirk};
@@ -147,9 +147,9 @@ fn configure_options(converter: &mut Converter) -> Result<()> {
 }
 ```
 
-### Resource Remapping Callbacks
+### 资源重映射回调
 
-Register closures on `Converter` to map Direct3D bindings to Vulkan locations on the fly. Remappers run synchronously during `converter.run()`.
+在 `Converter` 上注册闭包，以动态将 Direct3D binding 映射到 Vulkan 位置。Remapper 在 `converter.run()` 执行期间同步运行。
 
 ```rust
 use dxil_spirv::binding::{
@@ -193,17 +193,17 @@ fn setup_remappers(converter: &mut Converter) {
 }
 ```
 
-Other available remapper registration methods include:
-- `set_uav_remapper`: Unordered Access Views (storage buffers and storage images)
-- `set_cbv_remapper`: Constant Buffer Views (UBOs or push constant blocks)
-- `set_vertex_input_remapper`: Vertex attribute input locations
-- `set_stage_input_remapper`: Inter-stage input interface matching
-- `set_stage_output_remapper`: Inter-stage output interface matching
-- `set_stream_output_remapper`: Geometry shader transform feedback locations
+其他可用的 remapper 注册方法包括：
+- `set_uav_remapper`：无序访问视图（Unordered Access Views，即 storage buffer 和 storage image）
+- `set_cbv_remapper`：常量缓冲区视图（Constant Buffer Views，即 UBO 或 push constant 块）
+- `set_vertex_input_remapper`：顶点属性输入位置
+- `set_stage_input_remapper`：跨阶段输入接口匹配
+- `set_stage_output_remapper`：跨阶段输出接口匹配
+- `set_stream_output_remapper`：几何着色器变换反馈（transform feedback）位置
 
-### Root Constants and Descriptor Tables
+### Root Constant 与 Descriptor Table
 
-Configure push constants and D3D12 root signatures directly on `Converter`:
+直接在 `Converter` 上配置 push constant 和 D3D12 root signature：
 
 ```rust
 use dxil_spirv::binding::ResourceClass;
@@ -226,9 +226,9 @@ fn configure_root_layout(converter: &mut Converter) {
 }
 ```
 
-## Error Handling
+## 错误处理
 
-All functions return `dxil_spirv::Result<T>`, wrapping `dxil_spirv::Error`.
+所有函数均返回 `dxil_spirv::Result<T>`，它包装了 `dxil_spirv::Error`。
 
 ```rust
 use dxil_spirv::{Error, Result};
@@ -247,19 +247,19 @@ fn run_conversion(bytes: &[u8]) {
 }
 ```
 
-The error enum implements `std::error::Error` and `Display` via `thiserror`.
+错误枚举通过 `thiserror` 实现了 `std::error::Error` 和 `Display`。
 
-## Thread Safety and Diagnostics
+## 线程安全与诊断
 
-`ParsedBlob` and `Converter` implement `Send`, but deliberately omit `Sync`.
+`ParsedBlob` 和 `Converter` 实现了 `Send`，但特意未实现 `Sync`。
 
-- You can create a `ParsedBlob` on one thread and transfer it to another.
-- Running `Converter::run` concurrently on the same converter handle is unsafe.
-- For parallel shader compilation, construct separate `Converter` instances per thread.
+- 可以在一个线程上创建 `ParsedBlob` 并将其传递到另一个线程。
+- 在同一个 converter 句柄上并发运行 `Converter::run` 是不安全的。
+- 如需并行编译着色器，请在每个线程中分别构建独立的 `Converter` 实例。
 
-### Thread Logging Callback
+### 线程日志回调
 
-Receive internal compiler diagnostics and error logs with `set_thread_log_callback`:
+使用 `set_thread_log_callback` 接收内部编译器诊断和错误日志：
 
 ```rust
 use dxil_spirv::binding::LogLevel;
@@ -275,11 +275,11 @@ fn setup_logging() {
 }
 ```
 
-Logging state is thread-local. Call `set_thread_log_callback` on each worker thread that needs diagnostic logs.
+日志状态是线程局部的。在每个需要诊断日志的工作线程中调用 `set_thread_log_callback` 即可。
 
-### Thread Allocator Context
+### 线程分配器上下文
 
-For batch conversions or tight memory environments, manage memory with `ThreadAllocatorContext`:
+对于批量转换或内存紧张的环境，可以使用 `ThreadAllocatorContext` 管理内存：
 
 ```rust
 use dxil_spirv::ThreadAllocatorContext;
@@ -298,14 +298,14 @@ fn batch_compile(blobs: &[Vec<u8>]) {
 }
 ```
 
-## Limitations and Platform Notes
+## 限制与平台注意事项
 
-- **Input Formats**: Accepts DXBC (SM4/SM5/SM6) and DXIL bitcode. Legacy DX9 SM3 and earlier bytecodes are not supported.
-- **Platform Matrix**: Supported on Windows x86_64, Linux x86_64, and macOS Apple Silicon. Detailed platform notes are documented in [platform-support.md](platform-support.md).
-- **Subprocess Safety**: Upstream C++ assert failures cannot be caught within the same process. Test suites translating arbitrary untrusted shaders should run conversions in child processes.
+- **输入格式**：支持 DXBC（SM4/SM5/SM6）和 DXIL bitcode。不支持旧版 DX9 SM3 及更早的字节码。
+- **平台矩阵**：支持 Windows x86_64、Linux x86_64 和 macOS Apple Silicon。详细平台说明记录在 [platform-support.md](platform-support.zh-CN.md) 中。
+- **子进程安全性**：上游 C++ assert 失败无法在同一进程内捕获。转换任意不受信任着色器的测试套件应在子进程中运行转换。
 
-## Where to Go Next
+## 下一步
 
-- Learn how the test suite verifies translation against 829 test shaders in [testing.md](testing.md).
-- Explore project architecture and FFI design in [architecture.md](architecture.md).
-- Check the top-level [README.md](../README.md) for quick orientation and project layout.
+- 在 [testing.md](testing.zh-CN.md) 中了解测试套件如何针对 829 个测试着色器验证转换。
+- 在 [architecture.md](architecture.zh-CN.md) 中探索项目架构与 FFI 设计。
+- 查看顶层 [README.md](../README.zh-CN.md) 获取快速入门指引和项目结构。

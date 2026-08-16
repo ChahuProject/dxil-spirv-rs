@@ -1,5 +1,7 @@
 # Changelog
 
+[English](changelog.md) | [中文](changelog.zh-CN.md)
+
 Current Status: Version 0.1.0+dxil-spirv.2.72.1 | Rust Edition 2024 | 829/829 shader tests passing (100.0%) | CI green on Windows, Linux, macOS
 
 This document records the chronological development history of dxil-spirv-rs, reconstructed directly from git history and commit bodies.

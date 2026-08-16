@@ -3,6 +3,8 @@
 This is the documentation hub for **dxil-spirv-rs** — safe Rust bindings to
 [dxil-spirv](https://github.com/HansKristian-Work/dxil-spirv) (DXIL/DXBC → SPIR-V).
 
+[English](README.md) | [中文](README.zh-CN.md)
+
 ## Document map
 
 | Document | Audience | What it covers |
