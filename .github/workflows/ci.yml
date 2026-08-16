@@ -1,8 +1,21 @@
 name: CI
 
 on:
+  # Direct pushes to main: skip the entire workflow for documentation-only
+  # changes. CI only matters when Rust code or CI config itself changed.
   push:
     branches: [main]
+    paths-ignore:
+      - 'docs/**'
+      - 'README.md'
+      - 'README.zh-CN.md'
+      - '.agents/**'
+      - 'LICENSE-*'
+  # Pull requests: do NOT use paths-ignore here. If every job were skipped by
+  # path filters, required checks would stay stuck in "pending" forever (a
+  # known GitHub limitation). Instead the always-run `paths` job below detects
+  # which paths changed, and the heavy jobs skip themselves explicitly —
+  # leaving `paths` itself as the green, mergeable check.
   pull_request:
     branches: [main]
 
@@ -13,11 +26,40 @@ env:
   CARGO_INCREMENTAL: 0
 
 jobs:
-  # Fast gate: formatting. Fails the pipeline cheaply before any heavy build.
+  # Path detection (always runs, <15s). Decides whether the Rust jobs below
+  # need to run at all. For PRs this is the always-green check that prevents
+  # the "pending forever" problem when a PR only touches docs.
+  paths:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      rust: ${{ steps.filter.outputs.rust }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Detect changed paths
+        uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            rust:
+              - 'Cargo.toml'
+              - 'Cargo.lock'
+              - 'rust-toolchain.toml'
+              - 'rustfmt.toml'
+              - 'dxil-spirv/**'
+              - 'dxil-spirv-sys/**'
+              - 'dxil-spirv-tests/**'
+              # CI config itself: a workflow change must always be validated.
+              - '.github/workflows/**'
+
+  # Fast gate: formatting. Skipped for doc-only changes (nothing to format).
   fmt:
     name: rustfmt
     runs-on: ubuntu-latest
     timeout-minutes: 5
+    needs: paths
+    if: needs.paths.outputs.rust == 'true'
     steps:
       - uses: actions/checkout@v4
 
@@ -35,6 +77,8 @@ jobs:
     name: clippy (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
     timeout-minutes: 30
+    needs: paths
+    if: needs.paths.outputs.rust == 'true'
     strategy:
       fail-fast: false
       matrix:
@@ -85,6 +129,8 @@ jobs:
     name: build & test (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
     timeout-minutes: 45
+    needs: paths
+    if: needs.paths.outputs.rust == 'true'
     strategy:
       fail-fast: false
       matrix:
