@@ -1,0 +1,72 @@
+name: Publish to crates.io
+
+# Manual trigger only — publishing is a deliberate, reviewed action.
+# Run from the GitHub Actions tab: "Run workflow" on main.
+#
+# Why a CI-based publish: crates.io's Fastly CDN intermittently returns
+# "503 backend write error" for uploads from some network paths (notably
+# China). GitHub runners live in US data centers with clean connectivity,
+# so publishing from CI is reliable. The token lives in a GitHub secret,
+# never in the repository.
+#
+# Publishing order is fixed: dxil-spirv-sys FIRST (the wrapper depends on it
+# as `dxil-spirv-sys = "0.1.0"` from the registry), then dxil-spirv.
+
+on:
+  workflow_dispatch:
+    inputs:
+      crate:
+        description: 'Crate to publish (sys = dxil-spirv-sys only, wrapper = dxil-spirv only, both = sys then wrapper)'
+        required: true
+        default: 'both'
+        type: choice
+        options:
+          - both
+          - sys
+          - wrapper
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  publish:
+    name: publish
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          submodules: recursive
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Install build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y cmake ninja-build libclang-dev clang
+
+      # Cache only the registry; never target/ (the C++ CMake artifacts
+      # under target/.../dxil-spirv-sys-*/out are invisible to Cargo's
+      # fingerprinting and a stale cache breaks the link — same policy as
+      # the CI workflow).
+      - name: Cache cargo registry & git
+        uses: actions/cache@v5
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+          key: publish-crates-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: publish-crates-
+
+      - name: Publish dxil-spirv-sys
+        if: ${{ github.event.inputs.crate == 'both' || github.event.inputs.crate == 'sys' }}
+        run: |
+          cargo publish -p dxil-spirv-sys --registry crates-io --token "${{ secrets.CRATES_IO_TOKEN }}"
+          # Wait for the index to propagate so the wrapper's version
+          # requirement resolves against the newly published sys crate.
+          sleep 60
+
+      - name: Publish dxil-spirv
+        if: ${{ github.event.inputs.crate == 'both' || github.event.inputs.crate == 'wrapper' }}
+        run: cargo publish -p dxil-spirv --registry crates-io --token "${{ secrets.CRATES_IO_TOKEN }}"
