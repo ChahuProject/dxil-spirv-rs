@@ -184,6 +184,14 @@ fn generate_bindings(upstream: &Path, manifest_dir: &Path) {
         .expect("failed to write bindings.rs");
 
     // Keep a copy for local inspection.
-    let _ = std::fs::create_dir_all(manifest_dir.join("generated"));
-    let _ = bindings.write_to_file(manifest_dir.join("generated").join("bindings.rs"));
+    //
+    // IMPORTANT: this must NOT run during `cargo publish`. cargo's package
+    // verification builds the crate in a fresh target/package/ tree and
+    // fails with "Source directory was modified by build.rs" if a build
+    // script writes outside OUT_DIR there. CARGO_PUBLISH_ENV is set by
+    // cargo only during the publish verification pass.
+    if std::env::var("CARGO_PUBLISH_ENV").is_err() {
+        let _ = std::fs::create_dir_all(manifest_dir.join("generated"));
+        let _ = bindings.write_to_file(manifest_dir.join("generated").join("bindings.rs"));
+    }
 }
