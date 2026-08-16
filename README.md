@@ -10,43 +10,17 @@ Feed the resulting SPIR-V into a cross-compiler such as [SPIRV-Cross](https://gi
 DXBC / DXIL container ──dxil-spirv──▶ SPIR-V ──SPIRV-Cross──▶ HLSL / GLSL / MSL
 ```
 
-## AI-generated
+**Status**: edition 2024, MSRV 1.85, CI green on Windows / Linux / macOS, **all 829 upstream shader tests pass (100%)**.
 
-This crate is **entirely AI-generated** (by a large-language-model coding agent), with human direction and review. No hand-written logic.
+## AI-maintained
 
-**How it was produced:**
+This project is **AI-maintained**: it was created by the **Kimi K3** model, and
+AI-generated and AI-edited code is explicitly welcome and is the normal way
+this project evolves. Human direction and review are applied throughout; the
+AI follows the same standards as any human contributor. See the
+[AI-maintenance policy](docs/contributing.md) for details.
 
-1. **Substrate** — the upstream `dxil-spirv` C++ library (MIT, by Hans-Kristian Arntzen / Valve) is vendored as a git submodule under `dxil-spirv-sys/dxil-spirv`. The agent did not reimplement any of the conversion logic; it only binds to it.
-2. **sys layer (`dxil-spirv-sys`)** — a `build.rs` that compiles the upstream `dxil-spirv-c-static` CMake target and runs [bindgen](https://github.com/rust-lang/rust-bindgen) over the upstream C header `dxil_spirv_c.h` to produce the raw FFI surface.
-3. **safe layer (`dxil-spirv`)** — RAII wrappers (`ParsedBlob`, `Converter`), typed option/binding/remapper structs, and a `thiserror` error type, all written by the agent against the generated bindings.
-4. **Reference-driven** — binding structure and `build.rs` patterns were modelled on the mature [`grovesNL/spirv_cross`](https://github.com/grovesNL/spirv_cross) crate and the actively maintained [`SnowflakePowered/spirv-cross2-rs`](https://github.com/SnowflakePowered/spirv-cross2-rs) (a modern `-sys` + safe-layer architecture with stronger type/lifetime safety patterns). A bundled maintenance skill (`.agents/skills/sync-upstream`) encodes the verified facts (static-link closure, CRT rules, bindgen boundaries, callback trampoline pattern) so future updates can be re-generated safely by an agent.
-
-Because the code is machine-generated, please treat it with the same care you would any new dependency: review before production use, and report anything that looks off. Issues and human review are very welcome.
-
-## Quick start
-
-### Prerequisites
-
-- **Rust** (stable; see `rust-toolchain.toml`)
-- **A C++ toolchain + CMake** (the sys crate compiles the upstream C++ library at build time):
-  - Windows: MSVC (Visual Studio Build Tools) + CMake
-  - Linux/macOS: a C++14 compiler + CMake
-- **git submodules**: this repo vendors upstream source, so clone recursively.
-
-### Clone & build
-
-```sh
-git clone --recursive https://github.com/ChahuProject/dxil-spirv-rs.git
-cd dxil-spirv-rs
-
-# if you already cloned without --recursive:
-git submodule update --init --recursive
-
-cargo build --workspace
-cargo test  --workspace
-```
-
-### Use it
+## Using this crate (for users)
 
 Add to your `Cargo.toml`:
 
@@ -71,43 +45,60 @@ fn main() -> dxil_spirv::Result<()> {
 }
 ```
 
-For finer control, drive the stages explicitly:
+For finer control — entry-point selection, converter options, root
+signatures, descriptor remapping — drive the stages explicitly:
 
 ```rust
 use dxil_spirv::{Converter, ParsedBlob};
 
 let parsed = ParsedBlob::parse(&blob)?;
-println!("stage: {:?}, entry points: {}", parsed.shader_stage(), parsed.num_entry_points()?);
-
 let converter = Converter::new(&parsed)?;
 converter.run()?;
 let spirv_words = converter.compiled_spirv()?;
 ```
 
-### Crate layout
+**Full usage guide**: [docs/usage.md](docs/usage.md) — every converter option,
+remapper configuration, error handling, and platform notes.
 
-| Crate | Path | Purpose |
+## Developing this crate (for developers)
+
+This crate is a `-sys` + safe-layer split that compiles the vendored upstream
+C++ library via CMake at build time:
+
+| Crate | Path | Role |
 |---|---|---|
 | `dxil-spirv` | `dxil-spirv/` | Safe, idiomatic wrapper — what you depend on |
 | `dxil-spirv-sys` | `dxil-spirv-sys/` | Raw bindgen FFI + CMake build (linked transitively) |
-
-### API coverage
+| `dxil-spirv-tests` | `dxil-spirv-tests/` | End-to-end suite against all upstream shaders |
 
 The safe wrapper exposes **all** functions from the upstream C API
-(`dxil_spv_*`). This includes:
+(`dxil_spv_*`) — enforced by a compile-time test
+(`dxil-spirv/tests/api_coverage.rs`) that fails if upstream adds functions we
+haven't wrapped.
 
-- Core conversion (`parse` → `convert` → `compiled_spirv`)
-- All 8 remapper callbacks (SRV, UAV, CBV, sampler, vertex input, stage I/O, stream output)
-- Root signature / descriptor mapping (local root constants, descriptor tables, parameter mapping)
-- Work Graphs / mesh node introspection (SM6.8)
-- Resource scanning (pre-conversion introspection)
-- RDAT subobjects (DXR state objects)
-- Thread log callback and allocator context management
+**Start here**: [docs/architecture.md](docs/architecture.md) — crate topology,
+FFI boundary rules, static link closure, and the cross-platform pitfall ledger
+(the paid-for lessons about CMake, bindgen, and C++ linking).
 
-A compile-time test (`tests/api_coverage.rs`) ensures no upstream function
-is accidentally left unwrapped. If upstream adds new functions, the test
-fails until they are wrapped or explicitly documented as intentionally
-skipped.
+**Testing**: [docs/testing.md](docs/testing.md) — how the 829-shader suite
+works, regression baseline mechanics, and how to add tests.
+
+**CI**: [docs/ci.md](docs/ci.md) — job layout, platform strategy, and the
+caching pitfalls that shaped it.
+
+**Contribute**: [docs/contributing.md](docs/contributing.md) — contribution
+flow, code conventions, and the AI-maintenance policy.
+
+## What we did (project history)
+
+- **Initial bindings** — workspace split, RAII wrappers, FFI trampolines, static link closure.
+- **Full API coverage** — all 64 upstream C functions wrapped, zero gaps.
+- **End-to-end test suite** — 829 upstream shaders, DXC integration, subprocess isolation, GLSL round-trip validation.
+- **Regression baseline** — pass/fail tracking per shader with hard regression detection.
+- **100% pass rate** — 76.2% → 98.9% → **829/829 (100%)** by completing the upstream option/remapper surface.
+- **Edition 2024 + cross-platform CI** — rustfmt, MSRV 1.85, CI green on Windows / Linux / macOS.
+
+The full story, milestone by milestone with commits: [docs/changelog.md](docs/changelog.md).
 
 ## License
 

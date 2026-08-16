@@ -10,43 +10,13 @@
 DXBC / DXIL 容器 ──dxil-spirv──▶ SPIR-V ──SPIRV-Cross──▶ HLSL / GLSL / MSL
 ```
 
-## AI 生成声明
+**当前状态**：edition 2024，MSRV 1.85，CI 在 Windows / Linux / macOS 全绿，**上游 829 个着色器测试全部通过（100%）**。
 
-本 crate **完全由 AI 生成**（大型语言模型编码代理），经人类指导和审查。无手写逻辑。
+## AI 维护声明
 
-**生成方式：**
+本项目由 **AI 维护**：它由 **Kimi K3** 模型创建，AI 生成与 AI 编辑的代码是被明确欢迎的，也是本项目演进的常态。全程有人类方向的把控与审查；AI 遵守与人类贡献者完全相同的标准。详见 [AI 维护政策](docs/contributing.md)。
 
-1. **底层** — 上游 `dxil-spirv` C++ 库（MIT 许可证，Hans-Kristian Arntzen / Valve）作为 git 子模块 vendored 在 `dxil-spirv-sys/dxil-spirv` 下。代理未重新实现任何转换逻辑；仅进行绑定。
-2. **sys 层（`dxil-spirv-sys`）** — 一个 `build.rs`，编译上游 `dxil-spirv-c-static` CMake 目标，并对上游 C 头文件 `dxil_spirv_c.h` 运行 [bindgen](https://github.com/rust-lang/rust-bindgen) 生成原始 FFI 接口。
-3. **安全层（`dxil-spirv`）** — RAII 包装器（`ParsedBlob`、`Converter`）、类型化的选项/绑定/重映射结构体，以及 `thiserror` 错误类型，全部由代理基于生成的绑定编写。
-4. **参考驱动** — 绑定结构和 `build.rs` 模式以成熟的 [`grovesNL/spirv_cross`](https://github.com/grovesNL/spirv_cross) crate 和积极维护的 [`SnowflakePowered/spirv-cross2-rs`](https://github.com/SnowflakePowered/spirv-cross2-rs)（现代化的 `-sys` + 安全层架构，具有更强的类型/生命周期安全模式）为模板。捆绑的维护技能（`.agents/skills/sync-upstream`）编码了已验证的事实（静态链接闭包、CRT 规则、bindgen 边界、回调蹦床模式），以便未来更新可由代理安全地重新生成。
-
-由于代码是机器生成的，请像对待任何新依赖一样谨慎：生产使用前请审查，发现任何异常请报告。欢迎 Issue 和人类审查。
-
-## 快速开始
-
-### 前置要求
-
-- **Rust**（稳定版；见 `rust-toolchain.toml`）
-- **C++ 工具链 + CMake**（sys crate 在构建时编译上游 C++ 库）：
-  - Windows：MSVC（Visual Studio Build Tools）+ CMake
-  - Linux/macOS：C++14 编译器 + CMake
-- **git 子模块**：本仓库 vendored 上游源码，请递归克隆。
-
-### 克隆与构建
-
-```sh
-git clone --recursive https://github.com/ChahuProject/dxil-spirv-rs.git
-cd dxil-spirv-rs
-
-# 如果已经克隆但没有 --recursive：
-git submodule update --init --recursive
-
-cargo build --workspace
-cargo test  --workspace
-```
-
-### 使用
+## 使用本 crate（给使用者）
 
 在 `Cargo.toml` 中添加：
 
@@ -71,40 +41,49 @@ fn main() -> dxil_spirv::Result<()> {
 }
 ```
 
-如需更精细的控制，显式驱动各阶段：
+如需更精细的控制 — 入口点选择、转换器选项、根签名、描述符重映射 — 显式驱动各阶段：
 
 ```rust
 use dxil_spirv::{Converter, ParsedBlob};
 
 let parsed = ParsedBlob::parse(&blob)?;
-println!("阶段: {:?}, 入口点数量: {}", parsed.shader_stage(), parsed.num_entry_points()?);
-
 let converter = Converter::new(&parsed)?;
 converter.run()?;
 let spirv_words = converter.compiled_spirv()?;
 ```
 
-### Crate 布局
+**完整使用指南**：[docs/usage.md](docs/usage.md) — 每个转换器选项、重映射配置、错误处理与平台注意事项。
 
-| Crate | 路径 | 用途 |
+## 开发本 crate（给开发者）
+
+本 crate 采用 `-sys` + 安全层拆分，构建时通过 CMake 编译 vendored 的上游 C++ 库：
+
+| Crate | 路径 | 角色 |
 |---|---|---|
 | `dxil-spirv` | `dxil-spirv/` | 安全、惯用的包装器 — 你依赖的目标 |
 | `dxil-spirv-sys` | `dxil-spirv-sys/` | 原始 bindgen FFI + CMake 构建（传递链接） |
+| `dxil-spirv-tests` | `dxil-spirv-tests/` | 针对全部上游着色器的端到端测试套件 |
 
-### API 覆盖
+安全包装器暴露了上游 C API（`dxil_spv_*`）的**所有**函数 — 由编译期测试（`dxil-spirv/tests/api_coverage.rs`）强制保证，上游新增函数未包装即失败。
 
-安全包装器暴露了上游 C API（`dxil_spv_*`）的**所有**函数，包括：
+**从这里开始**：[docs/architecture.md](docs/architecture.md) — crate 拓扑、FFI 边界规则、静态链接闭包，以及跨平台踩坑实录（CMake、bindgen、C++ 链接的付费教训）。
 
-- 核心转换（`parse` → `convert` → `compiled_spirv`）
-- 全部 8 个重映射回调（SRV、UAV、CBV、采样器、顶点输入、阶段 I/O、流输出）
-- 根签名 / 描述符映射（本地根常量、描述符表、参数映射）
-- Work Graphs / 网格节点内省（SM6.8）
-- 资源扫描（转换前内省）
-- RDAT 子对象（DXR 状态对象）
-- 线程日志回调和分配器上下文管理
+**测试**：[docs/testing.md](docs/testing.md) — 829 个着色器套件如何工作、回归基线机制、如何添加测试。
 
-编译时测试（`tests/api_coverage.rs`）确保没有上游函数被意外遗漏。
-如果上游新增函数，测试会失败，直到被包装或明确记录为有意跳过。
+**CI**：[docs/ci.md](docs/ci.md) — job 布局、平台策略、以及塑造它的缓存教训。
+
+**贡献**：[docs/contributing.md](docs/contributing.md) — 贡献流程、代码规范、AI 维护政策。
+
+## 我们做了什么（项目历程）
+
+- **初始绑定** — workspace 拆分、RAII 包装器、FFI 蹦床、静态链接闭包。
+- **完整 API 覆盖** — 上游 64 个 C 函数全部包装，零缺口。
+- **端到端测试套件** — 829 个上游着色器、DXC 集成、子进程隔离、GLSL 往返验证。
+- **回归基线** — 逐着色器的 pass/fail 跟踪，带硬性回归检测。
+- **100% 通过率** — 76.2% → 98.9% → **829/829（100%）**，通过补全上游选项/重映射表面达成。
+- **Edition 2024 + 跨平台 CI** — rustfmt、MSRV 1.85、CI 在 Windows / Linux / macOS 全绿。
+
+完整故事，逐里程碑带提交记录：[docs/changelog.md](docs/changelog.md)。
 
 ## 许可证
 

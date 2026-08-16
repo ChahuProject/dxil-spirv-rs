@@ -6,8 +6,29 @@ description: Synchronize dxil-spirv-rs with upstream dxil-spirv and keep the saf
 
 This skill lets an agent autonomously update or complete the `dxil-spirv` Rust
 bindings **without breaking the build**, by combining a fixed workflow, a hard
-acceptance gate, and a built-in knowledge base of verified facts about the
-upstream C library and mature binding patterns.
+acceptance gate, and the project documentation as the source of truth.
+
+This skill is the **operating manual** (what to do, step by step). The
+**knowledge base** (why things are the way they are — FFI rules, link closure,
+pitfalls) lives in the project docs and is referenced below. If this skill and
+a doc disagree, the doc wins — update the doc.
+
+## Required reading (before any sync work)
+
+Read these before making changes; they encode the verified facts:
+
+1. `docs/architecture.md` — crate topology, build pipeline, static link
+   closure (9 libraries, dependent-before-dependency), FFI boundary rules,
+   callback trampoline pattern, Send/Sync policy, CRT/exceptions per platform,
+   C++ stdlib linking, the **cross-platform pitfall ledger** (paid-for lessons),
+   experimental API surface, versioning rule.
+2. `docs/testing.md` — the e2e suite: coverage guarantee (829/829 shaders),
+   test data flow, regression baseline mechanics, DXC toolchain and the
+   `dxc_unavailable` cfg, how to add shaders safely.
+3. `docs/ci.md` — CI jobs and the platform strategy (Windows runs the full
+   suite; Linux/macOS skip shader tests because DXC is a Windows binary).
+4. `docs/contributing.md` — acceptance gate and code conventions (edition
+   2024, rustfmt rules incl. the empty guard files, unsafe policy).
 
 ## Authoritative sources
 
@@ -18,7 +39,8 @@ upstream C library and mature binding patterns.
    build.rs / bindgen / safe-wrapper structure) and
    `SnowflakePowered/spirv-cross2-rs` (actively maintained modern successor:
    `-sys` + safe-layer split, `Handle<T>` instance tagging, Arc-guarded
-   context lifetimes, `+SHORTSHA` upstream-pinned versioning).
+   context lifetimes, `+SHORTSHA` upstream-pinned versioning). See
+   `docs/architecture.md` §2 for how their patterns apply here.
 
 ### Reference clones live INSIDE this skill (on demand)
 
@@ -38,10 +60,9 @@ consumes `dxil-spirv-sys/dxil-spirv`.
 
 ## Autonomy rule — never stop to ask the user mid-run
 
-Resolve design questions by consulting the reference repos and the knowledge
-base below, NOT by asking the user. Only pause for genuinely irreversible,
-unprecedented public-API breaks. Everything else: pick the reference-aligned
-option and proceed.
+Resolve design questions by consulting the docs above and the reference repos,
+NOT by asking the user. Only pause for genuinely irreversible, unprecedented
+public-API breaks. Everything else: pick the doc-aligned option and proceed.
 
 ---
 
@@ -51,14 +72,20 @@ A change is NOT complete until ALL of the following are green. If any is red,
 keep fixing until it passes — do not report "done" with a failing build.
 
 ```powershell
-cargo build --workspace                      # compiles
-cargo clippy --workspace -- -D warnings      # no lint (warnings = errors)
-cargo test --workspace                       # unit + layout + doctest pass
+cargo fmt --all -- --check                # formatting (rustfmt, edition 2024)
+cargo clippy --workspace --all-targets -- -D warnings   # no lint
+cargo build --workspace --all-targets     # full build (incl. C++ via CMake)
+cargo test --workspace                    # unit + layout + doctest + e2e
 ```
 
 **`cargo build` passing is NOT enough.** Static-link and CRT errors only
 surface at final link time, which `cargo build` of an rlib skips — always run
 `cargo test` to force a real link.
+
+**Platform caveat**: the e2e shader suite (`dxil-spirv-tests`) only runs where
+DXC is runnable (Windows). On Linux/macOS the suite self-skips via the
+`dxc_unavailable` cfg — that is expected, not a failure (see
+`docs/ci.md` §Platform Strategy). The unit/layout/doctest legs still run.
 
 ---
 
@@ -92,8 +119,7 @@ if (-not (Test-Path "$refs/spirv_cross")) {
 git -C "$refs/spirv_cross" submodule update --init --recursive
 
 # spirv-cross2-rs: modern reference for soundness patterns (Handle<T>,
-# Arc-guarded context, +SHORTSHA versioning). Vendored upstream lives in
-# spirv-cross-sys/native/SPIRV-Cross.
+# Arc-guarded context, +SHORTSHA versioning).
 if (-not (Test-Path "$refs/spirv-cross2-rs")) {
     git clone https://github.com/SnowflakePowered/spirv-cross2-rs.git "$refs/spirv-cross2-rs"
 }
@@ -122,8 +148,7 @@ Use `codegraph explore "<symbol>"` for cross-repo questions (e.g. "which
 - Upstream dxil-spirv uses a rolling master with **no git tags**. The
   "released version" is the commit pinned in `dxil-spirv-sys/dxil-spirv`.
 - The upstream **C API is explicitly kept ABI/API stable** (see the upstream
-  README: "Only the C API is installed and is expected to be kept ABI/API
-  stable when it releases."). The version macros
+  README). The version macros
   `DXIL_SPV_API_VERSION_MAJOR/MINOR/PATCH` (currently `2.72.1`) in
   `dxil_spirv_c.h` are the authoritative compatibility signal.
 - To upgrade: checkout the new commit in `dxil-spirv-sys/dxil-spirv`, then
@@ -135,32 +160,49 @@ Run this EVERY time the upstream commit changes. Check the diff of
 `dxil_spirv_c.h` and the CMake files:
 
 1. **Version macros** — did `DXIL_SPV_API_VERSION_*` or any
-   `*_INTERFACE_VERSION` change?
+   `*_INTERFACE_VERSION` change? (→ update the crate version, Step 4 of
+   versioning below)
 2. **Enums** — new variants in `dxil_spv_shader_stage` / `dxil_spv_resource_kind`
    / `dxil_spv_result` / option enums? Add them to the Rust enums.
 3. **Structs** — new fields in options / binding structs? Bindgen picks them
    up; verify safe-layer constructors still initialize everything.
 4. **Functions / callbacks** — new `DXIL_SPV_PUBLIC_API` exports or changed
-   remapper prototypes? Wrap them.
+   remapper prototypes? Wrap them (and keep `tests/api_coverage.rs` green).
 5. **CMake targets** — new/removed `add_library` / changed
-   `target_link_libraries`? Update the link list in `build.rs` (see KB-4).
+   `target_link_libraries`? Update the link list in `build.rs` (see
+   `docs/architecture.md` §2 Static Link Closure).
 6. **Compile flags** — changed `DXIL_SPV_CXX_FLAGS` or feature macros
-   (`AMD_EXTENSIONS`, `HAVE_LLVMBC`, `DXBC_SPV_ENABLE_SM5`)? Mirror in build.rs.
+   (`AMD_EXTENSIONS`, `HAVE_LLVMBC`, `DXBC_SPV_ENABLE_SM5`)? Mirror in
+   build.rs (see `docs/architecture.md` §9 for the switch checklist).
 7. **Crate version sync** — after any upstream bump, update the version in the
-   workspace `Cargo.toml` per the Versioning rule below so the published
-   version always advertises the upstream C API it binds.
+   workspace `Cargo.toml` per the versioning rule below.
 
 ### Step 4 — Sync the bindings
 
 - **sys layer**: bindgen allowlists `dxil_spv_.*`, so new functions appear
   automatically; confirm with `cargo build -p dxil-spirv-sys`.
 - **safe layer**: extend `dxil-spirv/src/` following the existing
-  `ParsedBlob` / `Converter` RAII pattern and the knowledge base below.
+  `ParsedBlob` / `Converter` RAII pattern and `docs/architecture.md`
+  (§3 FFI boundaries, §4 callback trampoline, §5 Send/Sync policy).
 
 ### Step 5 — Verify against the acceptance gate
 
-Run the full gate (build + clippy + test). Fix until green. **Do not mark the
-task complete, and do not commit, while any leg is red.**
+Run the full gate (fmt + clippy + build + test). Fix until green. **Do not
+mark the task complete, and do not commit, while any leg is red.**
+
+### Step 6 — Update the docs and skill
+
+The project docs are the single source of truth and must not drift:
+
+1. New option/binding/remapper surface → check `docs/usage.md` covers it.
+2. Changed build/link/FFI behavior → update `docs/architecture.md`
+   (pitfall ledger especially — add a new entry with symptom → root cause →
+   fix, and the fixing commit).
+3. New/changed shader test infrastructure → update `docs/testing.md`.
+4. CI changes → update `docs/ci.md`.
+5. User-visible change → add an entry to `docs/changelog.md`.
+6. If the knowledge base in `docs/` was wrong or incomplete, fix the DOC —
+   do not accumulate facts in this skill file.
 
 ---
 
@@ -187,166 +229,6 @@ e.g.  0.1.0+dxil-spirv.2.72.1
   `cargo publish --dry-run` still packages cleanly (version string validity is
   checked there).
 
-## Knowledge base (verified facts — do not rediscover)
-
-### KB-1 · bindgen boundaries
-
-- **Casted `#define` macros are NOT emitted.** `DXIL_SPV_TRUE`/`DXIL_SPV_FALSE`
-  are `((dxil_spv_bool)1)`/`((dxil_spv_bool)0)`; bindgen skips them. Use the
-  literal `1` / `0` (type is `dxil_spv_bool = c_uchar`) — never reference
-  `sys::DXIL_SPV_TRUE`.
-- **Anonymous unions cannot be built with a struct literal.** Use
-  `Default::default()` then assign fields; annotate the `From` impl with
-  `#[allow(clippy::field_reassign_with_default)]` and a comment.
-- spirv_cross disables layout tests (`layout_tests(false)`) to avoid fragile
-  cross-platform assertions; we keep bindgen's generated layout tests because
-  our struct set is stable — if an upstream struct changes ABI, those tests
-  are the early warning. Do not blindly disable them.
-
-### KB-2 · FFI callback / userdata pattern (no spirv_cross precedent)
-
-`spirv_cross` has NO callback API, so do not look there for trampoline help.
-Use the pattern already proven in `dxil-spirv/src/remapper.rs`:
-
-- A `Box<dyn FnMut…>` is a **fat pointer** and cannot be cast to `*mut c_void`.
-  **Double-box**: store `Box<Box<dyn FnMut…>>`, hand C a thin pointer to the
-  outer box, deref twice in the trampoline.
-- The converter **owns** the closure (stored in a holder struct); `userdata`
-  is a re-borrow valid while the holder is alive. Never `Box::into_raw` and
-  then also keep a Rust `Box` to the same pointer (double free).
-- Wrap the call in `std::panic::catch_unwind`; on panic return the C "failure"
-  value so unwinding never crosses the FFI boundary.
-- Keep-alive companions (e.g. a `Vec<u32>` swizzle table or `CString` path
-  whose pointer is stored in the raw option struct) live in the same enum and
-  are never read back — mark the enum `#[allow(dead_code)]` with a comment.
-
-### KB-3 · unsafe / Send / Sync policy
-
-- Upstream conversion is **single-threaded and synchronous**: remapper
-  callbacks fire only during `dxil_spv_converter_run`, on the calling thread,
-  with no background worker threads and no concurrent re-entry.
-- Therefore `unsafe impl Send for Converter` / `ParsedBlob` is sound (the
-  handle may move across threads), but do NOT add `Sync` (concurrent `run()`
-  on one converter is not safe). Callbacks only need `Send`, not `Sync`.
-- spirv_cross deliberately leaves its raw-pointer compiler `!Send`; our
-  `Send` is a deliberate, justified divergence — keep the rationale comment.
-
-### KB-4 · Static link closure (MSVC)
-
-`dxil-spirv-c-static` needs exactly these 9 static libs, in this
-dependent-before-dependency order (SPIRV-Tools / SPIRV-Cross are CLI-only and
-NOT in the closure; `dxil-spirv-headers` is INTERFACE-only, no `.lib`):
-
-```text
-dxil-spirv-c-static  dxil-converter  spirv-module  glslang-spirv-builder
-llvm-bc  bc-decoder  dxbc-spirv  dxil-utils  dxil-debug
-```
-
-If the linker reports unresolved `LLVMBC::*` / `spv::Builder::*` symbols, a
-library is missing or mis-ordered here.
-
-### KB-5 · CRT / build-type (MSVC)
-
-- Upstream does NOT set `CMAKE_MSVC_RUNTIME_LIBRARY` or hardcode `/MT`/`/MD`.
-- `build.rs` MUST set `CMAKE_MSVC_RUNTIME_LIBRARY` to
-  `MultiThreaded$<$<CONFIG:Debug>:Debug>DLL` and align `CMAKE_BUILD_TYPE` /
-  `.profile()` with the Rust `PROFILE` (debug→Debug, else Release).
-- Mixing a Release C++ lib with a Debug Rust link yields unresolved
-  `_CrtDbgReport` / `_calloc_dbg`. If those appear, this is the cause.
-
-### KB-6 · Exceptions / RTTI
-
-- Upstream GCC/Clang flags use `-fno-exceptions -fno-rtti`, but the core
-  library uses no `try`/`catch`/`throw` and no native RTTI (it has its own
-  LLVM-style `isa<>`/`dyn_cast<>`).
-- On MSVC we pass `/EHsc` to silence STL `C4530` and match Rust C++ build
-  convention. It is benign; no upstream conflict.
-
-### KB-7 · build.rs structure
-
-- We compile upstream via the `cmake` crate (upstream is a CMake project),
-  unlike spirv_cross which uses `cc` on vendored sources. Keep `cmake`.
-- spirv_cross generates bindings OFFLINE and commits them (avoiding a libclang
-  runtime dependency for downstream builds). We currently run bindgen in
-  build.rs; if downstream build ergonomics become a concern, consider switching
-  to the offline+committed model as a future improvement (not required now).
-
-### KB-8 · Experimental / conditional API surface
-
-Upstream `dxil_spirv_c.h` gates some functions behind preprocessor macros:
-
-| Macro | Functions | Upstream default | Our handling |
-|---|---|---|---|
-| `DXIL_SPV_ENABLE_EXPERIMENTAL_WORKGRAPHS` | `get_entry_point_node_input`, `get_entry_point_num_node_outputs`, `get_entry_point_node_output` | **Always ON** (hardcoded in `dxil_spirv_c.cpp`) | bindgen `-D` flag; safe layer always wraps |
-| `DXIL_SPV_ENABLE_EXPERIMENTAL_MULTIVIEW` | `is_multiview_compatible` | **Always ON** (hardcoded in `dxil_spirv_c.cpp`) | bindgen `-D` flag; safe layer always wraps |
-
-**Key insight**: The `.cpp` file hardcodes these `#define`s, so the compiled
-library always exports these symbols. Bindgen would skip them without
-`-D` because the header uses `#ifdef`, so we pass the defines in
-`generate_bindings()`. The safe layer wraps them unconditionally.
-
-**If upstream ever makes these conditional** (e.g. adds CMake options):
-1. Add matching `option()` in `build_with_cmake()`
-2. Add matching `#[cfg(feature = "...")]` in the safe layer
-3. Update this table and the "Switch maintenance checklist" below
-
-### KB-9 · Switch maintenance checklist
-
-When upstream adds, removes, or changes a compile-time switch, update **all**
-of these locations:
-
-1. `dxil-spirv-sys/build.rs` — `generate_bindings()` bindgen `-D` flags
-2. `dxil-spirv-sys/build.rs` — `build_with_cmake()` CMake `option()` / `target_compile_definitions()`
-3. `dxil-spirv/src/` — safe layer `#[cfg(feature = ...)]` gates
-4. `dxil-spirv/Cargo.toml` — `[features]` section
-5. `README.md` / `README.zh-CN.md` — user-facing feature documentation
-6. `dxil-spirv/tests/api_coverage.rs` — `KNOWN_MISSING` entries if functions become conditional
-7. This SKILL.md — KB-8 table and this checklist
-
-### KB-10 · End-to-end test infrastructure
-
-The `dxil-spirv-tests` crate provides full end-to-end validation against the
-upstream shader test suite. Key facts for maintenance:
-
-**Test data flow:**
-```
-dxil-spirv-sys/dxil-spirv/shaders/  ──sync──▶  tests/shaders/  (git-ignored)
-dxil-spirv-sys/dxil-spirv/reference/ ──sync──▶  tests/reference/ (git-ignored)
-                                              ↓ DXC 1.9.2602.17
-                                         tests/shaders/*.dxil
-```
-
-**Critical files:**
-- `dxil-spirv-tests/build.rs` — syncs shaders, downloads DXC, compiles DXIL
-- `dxil-spirv-tests/tests/harness.rs` — test driver + converter configuration
-- `dxil-spirv-tests/tests/e2e.rs` — test entry points (completeness, smoke, categories, metrics)
-
-**Subprocess isolation**: Each shader runs in a fresh child process because
-the upstream C++ can hit hard asserts (e.g. `SpvBuilder.cpp:754`). Never
-remove this isolation — without it, one bad shader kills the entire test run.
-
-**DXC version lock**: `DXC_VERSION` in `dxil-spirv-tests/build.rs` is pinned
-to `1.9.2602.17` (first production SM6.9 release). Do not downgrade; SM6.9
-shaders will fail to compile. If upgrading, update both `DXC_VERSION` and
-`DXC_ASSET_NAME` (asset names use dates, not versions).
-
-**Known failure classification**: `requires_complex_remapper()` in
-`harness.rs` classifies shaders that need per-shader remapper state as
-`KnownFailure`. This is intentional — it keeps the completeness check green
-while explicitly tracking coverage gaps. Current rate: ~33.7% (279/829).
-
-**When upstream adds shaders:**
-1. `test_completeness_check` fails (hard stop)
-2. `cargo build -p dxil-spirv-tests` syncs + compiles new shaders
-3. New shaders may pass, fail, or need `KnownFailure` classification
-4. Update `requires_complex_remapper()` if new markers appear
-
-**When upstream changes reference outputs:**
-1. Strict mode (`DXIL_SPIRV_STRICT_GLSL=1`) will fail with MD5 mismatch
-2. Verify the change is legitimate (formatting vs functional)
-3. If legitimate, no action needed — our reference is only for strict mode
-4. If functional difference, investigate our converter configuration
-
 ---
 
 ## Hard rules
@@ -358,5 +240,7 @@ while explicitly tracking coverage gaps. Current rate: ~33.7% (279/829).
   upstream `DXIL_SPV_API_VERSION_*` (see the Versioning rule).
 - Do NOT skip the acceptance gate, and do NOT report completion on a red build.
   `cargo test` is mandatory — it is the only leg that forces a real link.
-- Do NOT stop to ask the user for decisions the knowledge base or a reference
-  repo can answer.
+- Do NOT stop to ask the user for decisions the docs or a reference repo can
+  answer.
+- Do NOT add new knowledge to this file. Knowledge lives in `docs/`; this file
+  only points at it. If a doc is missing the fact you need, add it to the doc.
