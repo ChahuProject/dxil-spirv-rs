@@ -186,11 +186,18 @@ fn generate_bindings(upstream: &Path, manifest_dir: &Path) {
     // Keep a copy for local inspection.
     //
     // IMPORTANT: this must NOT run during `cargo publish`. cargo's package
-    // verification builds the crate in a fresh target/package/ tree and
-    // fails with "Source directory was modified by build.rs" if a build
-    // script writes outside OUT_DIR there. CARGO_PUBLISH_ENV is set by
-    // cargo only during the publish verification pass.
-    if std::env::var("CARGO_PUBLISH_ENV").is_err() {
+    // verification builds the crate in a fresh `target/package/<name>/`
+    // tree and fails with "Source directory was modified by build.rs"
+    // if a build script writes outside OUT_DIR there. During that pass
+    // CARGO_MANIFEST_DIR points into `target/package/`, which is the
+    // reliable signal (cargo sets no dedicated publish-verify variable).
+    let manifest = manifest_dir.to_string_lossy();
+    let in_target_package = manifest.contains(&format!(
+        "{}package{}",
+        std::path::MAIN_SEPARATOR,
+        std::path::MAIN_SEPARATOR
+    ));
+    if !in_target_package {
         let _ = std::fs::create_dir_all(manifest_dir.join("generated"));
         let _ = bindings.write_to_file(manifest_dir.join("generated").join("bindings.rs"));
     }
