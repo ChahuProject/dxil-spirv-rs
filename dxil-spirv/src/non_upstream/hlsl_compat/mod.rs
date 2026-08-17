@@ -26,11 +26,13 @@
 pub mod detect;
 mod error;
 pub mod ir;
+pub mod location;
 mod rewrite;
 
 pub use detect::{AccessUse, CbufferTarget, Skipped, Stride4View, Vec4Alias};
 pub use error::HlslCompatError;
 pub use ir::{analyze, ModuleInfo, ScalarKind, Variable};
+pub use location::deduplicate_stage_output_locations;
 
 use rspirv::binary::Assemble;
 
