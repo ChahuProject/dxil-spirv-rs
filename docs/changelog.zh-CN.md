@@ -161,17 +161,18 @@ Bindgen 在 Windows 上将 `dxil_spv_option` 生成为 `c_int`（有符号），
 `docs/platform-support.zh-CN.md` 详细列出了支持的操作系统与架构目标。新增了此变更日志，用于追踪项目在各个主要里程碑中的演进。
 
 ### 9. 非上游 hlsl-compat 扩展
-- 日期:2026-08-16
+- 日期：2026-08-16
+- 关键提交：`9d4dfa6`, `9274fd9`
 
-新增首个**非上游扩展**:cargo feature `non-upstream-hlsl-compat`(默认关闭)启用`dxil_spirv::non_upstream::hlsl_compat::vec4_align_cbuffers` —— 一个纯 SPIR-V 后处理 pass,修复上游输出中 spirv-cross2 的 HLSL 后端无法表达的情况。
+新增首个**非上游扩展**：cargo feature `non-upstream-hlsl-compat`（默认关闭）启用`dxil_spirv::non_upstream::hlsl_compat::vec4_align_cbuffers` —— 一个纯 SPIR-V 后处理 pass，修复上游输出中 spirv-cross2 的 HLSL 后端无法表达的情况。
 
-**为什么做**:上游 dxbc-spirv 对经由局部数组拷贝(标量粒度动态索引)访问的 cbuffer,输出 stride-4 标量数组(`struct { float[N] ArrayStride 4 }`)。这是合法 std140,但 spirv-cross2 的 HLSL 后端把 cbuffer 建模为 vec4 寄存器并拒绝。实测 Unity URP 着色器:HLSL 反编译失败率 74%(D3D12)/ 92%(D3D11),全部来自这一个错误类别;同一批着色器的 GLSL/MSL 全部成功。
+**为什么做**：上游 dxbc-spirv 对经由局部数组拷贝（标量粒度动态索引）访问的 cbuffer，输出 stride-4 标量数组（`struct { float[N] ArrayStride 4 }`）。这是合法 std140，但 spirv-cross2 的 HLSL 后端把 cbuffer 建模为 vec4 寄存器并拒绝。实测 Unity URP 着色器：HLSL 反编译失败率 74%（D3D12）/ 92%（D3D11），全部来自这一个错误类别；同一批着色器的 GLSL/MSL 全部成功。
 
-**做了什么**:pass 把 stride-4 cbuffer 视图重写为 `float4[N/4]`(stride 16),并重写所有访问链(`[member, i]` -> `[member, i/4, i%4]`;动态索引变为 `OpUDiv`/`OpUMod`)。当同一 cbuffer 也存在 vec4 视图(同 binding)时,标量视图被合并进 vec4 视图并删除重复变量。变换保持布局与语义不变。
+**做了什么**：pass 把 stride-4 cbuffer 视图重写为 `float4[N/4]`（stride 16），并重写所有访问链（`[member, i]` -> `[member, i/4, i%4]`；动态索引变为 `OpUDiv`/`OpUMod`）。当同一 cbuffer 也存在 vec4 视图（同 binding）时，标量视图被合并进 vec4 视图并删除重复变量。变换保持布局与语义不变。
 
-**隔离**:独立模块(`non_upstream`)、独立错误类型、独立测试;feature 关闭时模块不存在。vendored 上游 C++ 零改动。
+**隔离**：独立模块（`non_upstream`）、独立错误类型、独立测试；feature 关闭时模块不存在。vendored 上游 C++ 零改动。
 
-**验证**:全量 810 个着色器扫描 —— GLSL 零回归,修复 10 个 HLSL 失败(全部为 cbuffer 布局类)。新增单元测试(4)与 e2e 测试(3),均在 feature 门控下运行。完整分析、复现步骤与验证见 docs/non-upstream/hlsl-compat-rationale.md。
+**验证**：全量 810 个着色器扫描 —— GLSL 零回归，修复 10 个 HLSL 失败（全部为 cbuffer 布局类）。新增单元测试（4）与 e2e 测试（3），均在 feature 门控下运行。完整分析、复现步骤与验证见 docs/non-upstream/hlsl-compat-rationale.zh-CN.md。
 
 ## 如何更新
 

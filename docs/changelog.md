@@ -163,12 +163,9 @@ Project documentation was reorganized into dedicated files under `docs/` to prov
 
 ### 9. Non-upstream hlsl-compat extension
 - Date: 2026-08-16
+- Key Commits: `9d4dfa6`, `9274fd9`
 
-Added the first **non-upstream extension**: the 
-on-upstream-hlsl-compat
-cargo feature (default off) enables dxil_spirv::non_upstream::hlsl_compat::vec4_align_cbuffers,
-a pure SPIR-V post-processing pass that fixes an upstream output that the
-spirv-cross2 HLSL backend cannot express.
+Added the first **non-upstream extension**: the `non-upstream-hlsl-compat` cargo feature (default off) enables `dxil_spirv::non_upstream::hlsl_compat::vec4_align_cbuffers`, a pure SPIR-V post-processing pass that fixes an upstream output that the spirv-cross2 HLSL backend cannot express.
 
 **Why**: upstream dxbc-spirv emits cbuffers accessed through local-array copies
 (scalar-granularity dynamic indexing) as stride-4 scalar arrays
@@ -177,20 +174,19 @@ HLSL backend models cbuffers as vec4 registers and rejects it. Measured on real
 Unity URP shaders: 74% (D3D12) / 92% (D3D11) HLSL decompilation failures, all
 from this one error class; GLSL/MSL succeeded on the same shaders.
 
-**What**: the pass rewrites stride-4 cbuffer views to loat4[N/4] (stride 16)
-and rewrites every access chain ([member, i] -> [member, i/4, i%4];
-dynamic indices become OpUDiv/OpUMod). When the same cbuffer also exists as
+**What**: the pass rewrites stride-4 cbuffer views to `float4[N/4]` (stride 16)
+and rewrites every access chain (`[member, i]` -> `[member, i/4, i%4]`;
+dynamic indices become `OpUDiv`/`OpUMod`). When the same cbuffer also exists as
 a vec4 view (same binding), the scalar view is merged into it and the duplicate
 variable is dropped. The transformation is layout- and semantics-preserving.
 
-**Isolation**: separate module (
-on_upstream), separate error type, separate
+**Isolation**: separate module (`non_upstream`), separate error type, separate
 tests, and the module does not exist unless the feature is enabled. The vendored
 upstream C++ is untouched.
 
 **Verification**: all 810 shaders scanned — 0 GLSL regressions, 10 HLSL
 failures fixed (all cbuffer-layout class). Unit tests (4) and e2e tests (3)
-added under the feature gate. See docs/non-upstream/hlsl-compat-rationale.md
+added under the feature gate. See [docs/non-upstream/hlsl-compat-rationale.md](non-upstream/hlsl-compat-rationale.md)
 for the full analysis, reproduction steps, and validation.
 
 ## How to Update

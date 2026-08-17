@@ -16,6 +16,7 @@ This is the documentation hub for **dxil-spirv-rs** — safe Rust bindings to
 | [ci.md](ci.md) | Developers | CI jobs, platform strategy, DXC handling, caching policy and the pitfalls that shaped it |
 | [contributing.md](contributing.md) | Contributors | How to contribute, code conventions, the AI-maintenance policy, the documentation standards defined below |
 | [changelog.md](changelog.md) | Everyone | What changed and why — the project's evolution from first commit to 100% test coverage |
+| [non-upstream/hlsl-compat-rationale.md](non-upstream/hlsl-compat-rationale.md) | Developers | Design rationale for the `non-upstream-hlsl-compat` extension: why upstream's stride-4 scalar cbuffer output is rejected by the spirv-cross2 HLSL backend, and how the vec4-alignment post-processing pass fixes it |
 
 ## Documentation standards (how to share docs)
 
@@ -41,35 +42,41 @@ non-conflicting.
 6. **Cross-references use relative paths** (`[testing.md](testing.md)`), not
    absolute URLs, so the docs work on GitHub, crates.io, and offline.
 
+### Bilingual conventions
+
+7. **Every human-facing document ships in both English and Chinese**: English `<name>.md`, Chinese `<name>.zh-CN.md`. Skill files (`.agents/skills/`) are exempt.
+8. **Both versions carry a language switcher at the top**: a line shaped like `[English](...) | [中文](...)`, with the English file pointing at the matching `.zh-CN.md` file and the Chinese file pointing at the matching English file. Translations must stay in sync with the English version — change the English, change the Chinese, and vice versa.
+9. **Translation rules**: code blocks, commands, paths, commit hashes, and API names stay verbatim; technical terms (DXIL, SPIR-V, bindgen, CMake, Cargo, FFI, RAII) remain in English; prose is translated into Simplified Chinese.
+
 ### Content rules
 
-7. **Know your audience.** A doc is either *for users* or *for developers* —
-   write to one, and link to the other. `usage.md` never explains how the C++
-   core is linked; `architecture.md` never re-explains how to add the
-   dependency.
-8. **State coverage facts with numbers.** Claims like "all upstream tests are
-   covered" must carry the evidence: *829/829 shaders, enforced by
-   `test_completeness_check`*. If a number goes stale, update it — stale
-   numbers are worse than no numbers.
-9. **Code examples must be runnable.** Every snippet should be copy-pasteable
-   from a fresh crate. Prefer `no_run` doctests in the crate over prose-only
-   snippets.
-10. **Document pitfalls where they bite.** Cross-platform gotchas (link flags,
+10. **Know your audience.** A doc is either *for users* or *for developers* —
+    write to one, and link to the other. `usage.md` never explains how the C++
+    core is linked; `architecture.md` never re-explains how to add the
+    dependency.
+11. **State coverage facts with numbers.** Claims like "all upstream tests are
+    covered" must carry the evidence: *829/829 shaders, enforced by
+    `test_completeness_check`*. If a number goes stale, update it — stale
+    numbers are worse than no numbers.
+12. **Code examples must be runnable.** Every snippet should be copy-pasteable
+    from a fresh crate. Prefer `no_run` doctests in the crate over prose-only
+    snippets.
+13. **Document pitfalls where they bite.** Cross-platform gotchas (link flags,
     bindgen signedness, DXC availability) belong in the doc that explains the
     affected subsystem — see the pitfall ledger in
     [architecture.md](architecture.md) and the CI history in
     [ci.md](ci.md). Never delete a pitfall entry without a reason; they are
     paid-for lessons.
-11. **Changelog entries are factual, not promotional.** State what changed and
+14. **Changelog entries are factual, not promotional.** State what changed and
     why; reference the commit that introduced it. No AI-flavored filler.
 
 ### AI-maintenance policy (applies to docs too)
 
-12. This project is **AI-maintained**: AI-generated and AI-edited code and
+15. This project is **AI-maintained**: AI-generated and AI-edited code and
     documentation are explicitly welcome (see
     [contributing.md](contributing.md) for the full policy). AI contributors
     must follow the exact same standards as humans — including this document.
-13. AI-edited docs must state the factual basis for numbers and claims
+16. AI-edited docs must state the factual basis for numbers and claims
     (e.g. "verified by running `cargo test` on commit X"). A claim without a
     verification path is a defect, not an opinion.
 
@@ -85,5 +92,7 @@ docs/                     ← everything else, organized by audience
   ci.md                   ← for developers
   contributing.md         ← for contributors
   changelog.md            ← for everyone
+  non-upstream/           ← non-upstream extension rationale
+    hlsl-compat-rationale.md
 .agents/skills/           ← AI maintenance skills (reference these docs)
 ```

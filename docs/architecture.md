@@ -318,4 +318,4 @@ Certain shaders in the upstream test suite require per-shader custom remapper ca
 
 This design preserves two goals:
 1. `test_completeness_check` enforces that all 829 upstream shaders are tracked and accounted for.
-2. The exact known failure rate (~33.7%, or 279/829 shaders) is measured continuously without breaking automated build gates.
+2. The known-failure rate is measured continuously without breaking automated build gates; it currently sits at 0/829 (100% passing), so `requires_complex_remapper()` now acts as a regression safeguard rather than a known-failure classifier.

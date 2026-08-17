@@ -318,4 +318,4 @@ dxil-spirv-sys/dxil-spirv/reference/ ──sync──▶  tests/reference/ (git-
 
 该设计实现了两个目标：
 1. `test_completeness_check` 强制跟踪并核对所有 829 个上游着色器。
-2. 持续测量确切的已知失败率（约 33.7%，即 279/829 个着色器），而不会破坏自动化构建门禁。
+2. 持续测量已知失败率，而不会破坏自动化构建门禁；当前为 0/829（100% 通过），因此 `requires_complex_remapper()` 如今充当回归保护而非已知失败分类器。

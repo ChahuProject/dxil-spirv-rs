@@ -15,6 +15,7 @@
 | [ci.md](ci.zh-CN.md) | 开发者 | CI job、平台策略、DXC 处理、缓存策略及其塑造它的坑 |
 | [contributing.md](contributing.zh-CN.md) | 贡献者 | 如何贡献、代码规范、AI 维护政策、下文定义的文档标准 |
 | [changelog.md](changelog.zh-CN.md) | 所有人 | 变更了什么、为什么 — 项目从首个提交到 100% 测试覆盖的演进 |
+| [non-upstream/hlsl-compat-rationale.md](non-upstream/hlsl-compat-rationale.zh-CN.md) | 开发者 | `non-upstream-hlsl-compat` 扩展的设计论证：上游 stride-4 标量 cbuffer 输出为何被 spirv-cross2 的 HLSL 后端拒绝，以及 vec4 对齐后处理 pass 如何修复 |
 
 ## 文档标准（如何共享文档）
 
@@ -60,5 +61,7 @@ docs/                     ← 其余一切，按受众组织
   ci.md                   ← 给开发者
   contributing.md         ← 给贡献者
   changelog.md            ← 给所有人
+  non-upstream/           ← 非上游扩展论证
+    hlsl-compat-rationale.md
 .agents/skills/           ← AI 维护技能（引用这些文档）
 ```
